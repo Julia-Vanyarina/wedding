@@ -121,6 +121,30 @@ textarea{min-height:70px;resize:vertical}
 .pill.ok{color:var(--good)} .pill.no{color:var(--bad)} .pill.q{color:var(--warn)} .pill.n{color:var(--muted)} .pill.sent{color:var(--sky)}
 .pill.chosen{background:var(--olive);color:var(--card);border-color:var(--olive)}
 .empty{padding:24px 6px;color:var(--muted);text-align:center}
+/* Сравнение площадок: на телефоне подпись строки над тремя колонками, на компьютере — слева */
+.cmp{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));column-gap:10px;margin-top:12px}
+.cmp-corner{display:none}
+.cmp-h{display:flex;flex-direction:column;gap:4px;align-items:flex-start;padding-bottom:8px;min-width:0}
+.cmp-h button{background:none;border:0;padding:0;text-align:left;cursor:pointer;font-family:var(--f-display);font-size:16px;line-height:1.2;overflow-wrap:break-word;hyphens:auto;-webkit-hyphens:auto;max-width:100%;color:var(--ink)}
+.cmp-h button:hover{color:var(--olive)}
+.cmp-l{grid-column:1/-1;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border-top:1px solid var(--line);padding-top:10px;margin-top:2px}
+.cmp-c{font-size:15px;padding:3px 0 10px;min-width:0;overflow-wrap:anywhere}
+.cmp-c b{font-weight:700}
+.cmp-c .sub{display:block;font-size:12.5px;color:var(--muted)}
+.cmp-c.best b{color:var(--good)}
+.cmp-c .unk{color:var(--warn);font-weight:600}
+.tag{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:999px;background:var(--olive-soft);color:var(--olive);margin-top:2px}
+.cmp-act{display:flex;flex-direction:column;gap:6px;padding-top:10px;border-top:1px solid var(--line);min-width:0}
+.cmp-act .btn{min-height:34px;padding:5px 10px;font-size:13.5px;justify-content:center}
+@media (min-width:760px){
+  .cmp{grid-template-columns:170px repeat(var(--n),minmax(0,1fr));column-gap:16px}
+  .cmp-corner{display:block}
+  .cmp-l{grid-column:auto;padding:10px 0;margin:0}
+  .cmp-c{border-top:1px solid var(--line);padding:10px 0}
+  .cmp-c b{font-size:16px}
+  .cmp-h button{font-size:21px}
+  .cmp-act{flex-direction:row;flex-wrap:wrap}
+}
 
 /* Журнал */
 .log{display:flex;flex-direction:column}
@@ -207,8 +231,9 @@ code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.
 <script>
 "use strict";
 /* ================= Версия приложения ================= */
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.2.0";
 const APP_CHANGES = [
+  { v: "1.2.0", d: "24.10.2026", t: "Сравнение площадок: три варианта рядом — смета, цена на гостя, итог свадьбы и остаток бюджета, вместимость, план на дождь, плюсы и минусы. Добавлен Зал Романовский." },
   { v: "1.1.0", d: "24.10.2026", t: "Подключение к GitHub сохраняется после закрытия приложения и в иконке на экране «Домой». Новый вид: фон айвори, шрифты Prata и Manrope, оливковый акцент." },
   { v: "1.0.0", d: "24.10.2026", t: "Первая версия: гости, площадки, траты, смета, журнал изменений, синхронизация через GitHub." }
 ];
@@ -225,6 +250,9 @@ const E_CATS = ["Площадка", "Фотограф", "Видео", "Коль�
 const V_PRICE = ["Сумма за всё", "За гостя"];
 
 /* ================= Начальные данные (из плана свадьбы) ================= */
+function romanovsky(id) {
+  return { id, name: "Зал Романовский", city: "Ульяновск", priceType: "Сумма за всё", amount: 0, paid: 0, contact: "", note: "Смету пока не знаем", chosen: false, capacity: 0, rain: "", musicUntil: "", alcohol: "", pros: "", cons: "" };
+}
 function seed() {
   let n = 0; const id = p => p + (++n).toString(36) + Math.random().toString(36).slice(2, 6);
   const g = (name, side, group, extra = {}) => ({ id: id("g"), name, side, group, status: "В списке", plusOne: "Нет", note: "", ...extra });
@@ -271,8 +299,9 @@ function seed() {
     g("Василиса", "Юля", "Друзья", { status: "Под вопросом" })
   ];
   const venues = [
-    { id: id("v"), name: "Radisson — зал", city: "Ульяновск", priceType: "Сумма за всё", amount: 430000, paid: 0, contact: "", note: "Оценка из плана, ждём смету на 45 гостей", chosen: false },
-    { id: id("v"), name: "Radisson — веранда", city: "Ульяновск", priceType: "Сумма за всё", amount: 500000, paid: 0, contact: "", note: "Оценка из плана. Уточнить план «Б» на дождь", chosen: false }
+    { id: id("v"), name: "Radisson — зал", city: "Ульяновск", priceType: "Сумма за всё", amount: 430000, paid: 0, contact: "", note: "Оценка из плана, ждём смету на 45 гостей", chosen: false, capacity: 0, rain: "Не нужен", musicUntil: "", alcohol: "", pros: "Не зависит от погоды", cons: "Нужно больше декора и тёплый свет" },
+    { id: id("v"), name: "Radisson — веранда", city: "Ульяновск", priceType: "Сумма за всё", amount: 500000, paid: 0, contact: "", note: "Оценка из плана", chosen: false, capacity: 0, rain: "Уточнить", musicUntil: "Уточнить", alcohol: "", pros: "Тосканская атмосфера, закат, свет для фото", cons: "Зависит от погоды" },
+    romanovsky(id("v"))
   ];
   const e = (cat, title, planned, extra = {}) => ({ id: id("e"), cat, title, planned, paid: 0, status: "Выбираем", vendor: "", note: "", ...extra });
   const expenses = [
@@ -286,7 +315,7 @@ function seed() {
     e("Торт", "Торт и мелочи", 15000)
   ];
   return {
-    meta: { rev: 1, created: new Date().toISOString(), updated: new Date().toISOString(), appVersion: APP_VERSION },
+    meta: { rev: 1, created: new Date().toISOString(), updated: new Date().toISOString(), appVersion: APP_VERSION, migrations: ["romanovsky"] },
     budget: { limit: 700000, min: 600000, max: 800000 },
     guests, venues, expenses,
     log: [{ ts: new Date().toISOString(), who: "Приложение", text: "Созданы начальные данные из плана свадьбы" }]
@@ -332,11 +361,13 @@ function guestStats(d) {
   };
 }
 function venueCost(v, d) { const amt = Number(v.amount) || 0; return v.priceType === "За гостя" ? amt * guestStats(d).expected : amt; }
+const venueKnown = v => (Number(v.amount) || 0) > 0;
 function budgetCalc(d) {
   const chosen = d.venues.find(v => v.chosen);
+  const known = d.venues.filter(venueKnown);
   let venue = null;
-  if (chosen) venue = { v: chosen, cost: venueCost(chosen, d), paid: Number(chosen.paid) || 0, why: "выбранная площадка" };
-  else if (d.venues.length) { const top = d.venues.map(v => ({ v, cost: venueCost(v, d) })).sort((a, b) => b.cost - a.cost)[0]; venue = { v: top.v, cost: top.cost, paid: 0, why: "площадка не выбрана — считаем самый дорогой вариант" }; }
+  if (chosen) venue = { v: chosen, cost: venueCost(chosen, d), paid: Number(chosen.paid) || 0, why: venueKnown(chosen) ? "выбранная площадка" : "выбранная площадка, сметы пока нет" };
+  else if (known.length) { const top = known.map(v => ({ v, cost: venueCost(v, d) })).sort((a, b) => b.cost - a.cost)[0]; venue = { v: top.v, cost: top.cost, paid: 0, why: "площадка не выбрана — считаем самый дорогой вариант со сметой" }; }
   const cats = {};
   if (venue) cats["Площадка"] = { plan: venue.cost, paid: venue.paid };
   d.expenses.forEach(x => { const c = cats[x.cat] || (cats[x.cat] = { plan: 0, paid: 0 }); c.plan += Number(x.planned) || 0; c.paid += Number(x.paid) || 0; });
@@ -344,6 +375,12 @@ function budgetCalc(d) {
   const paid = Object.values(cats).reduce((s, c) => s + c.paid, 0);
   const limit = Number(d.budget.limit) || 0;
   return { venue, cats, plan, paid, limit, free: limit - plan, toPay: plan - paid };
+}
+/* Сколько стоит вся свадьба, если выбрать эту площадку */
+function weddingWith(v, d) {
+  const other = d.expenses.reduce((s, x) => s + (Number(x.planned) || 0), 0);
+  const total = venueCost(v, d) + other;
+  return { total, free: (Number(d.budget.limit) || 0) - total };
 }
 
 /* ================= GitHub ================= */
@@ -388,7 +425,7 @@ function setStatus(st, err = "") { S.status = st; S.error = err; renderSync(); }
 async function load(quiet) {
   if (S.mode === "demo") {
     S.data = LS.get("wedding.demo", null) || seed();
-    LS.set("wedding.demo", S.data); renderAll(); return;
+    LS.set("wedding.demo", S.data); renderAll(); await migrate(); return;
   }
   if (!quiet) setStatus("busy");
   try {
@@ -401,33 +438,46 @@ async function load(quiet) {
     }
     S.data = data; S.sha = sha; S.lastSync = new Date(); LS.set("wedding.cache", data);
     setStatus("ok"); renderAll();
+    await migrate();
   } catch (e) {
     S.data = S.data || LS.get("wedding.cache", null) || seed();
     setStatus("err", e.message || "Нет связи с GitHub"); renderAll();
   }
 }
+async function migrate() {
+  const done = (S.data && S.data.meta && S.data.meta.migrations) || [];
+  if (done.includes("romanovsky")) return;
+  await mutate("добавлена площадка «Зал Романовский» для сравнения", d => {
+    d.meta.migrations = d.meta.migrations || [];
+    if (d.meta.migrations.includes("romanovsky")) return false;
+    d.meta.migrations.push("romanovsky");
+    if (!d.venues.some(v => /романовск/i.test(v.name))) d.venues.push(romanovsky(newId("v")));
+  }, { who: "Обновление " + APP_VERSION, quiet: true });
+}
 /* Любое изменение = функция над данными + запись в журнал.
    Перед сохранением берём свежую версию с GitHub, чтобы не затереть чужие правки. */
-async function mutate(text, fn) {
-  if (!S.who) { askWho(() => mutate(text, fn)); return false; }
+async function mutate(text, fn, opts = {}) {
+  const who = opts.who || S.who;
+  if (!who) { askWho(() => mutate(text, fn, opts)); return false; }
   const stamp = d => {
-    fn(d);
+    if (fn(d) === false) return false;
     d.meta.rev = (d.meta.rev || 0) + 1; d.meta.updated = new Date().toISOString(); d.meta.appVersion = APP_VERSION;
-    d.log.unshift({ ts: d.meta.updated, who: S.who, text, rev: d.meta.rev });
+    d.log.unshift({ ts: d.meta.updated, who, text, rev: d.meta.rev });
     if (d.log.length > 1000) d.log.length = 1000;
+    return true;
   };
-  if (S.mode === "demo") { stamp(S.data); LS.set("wedding.demo", S.data); renderAll(); toast("Сохранено на этом устройстве"); return true; }
+  if (S.mode === "demo") { if (stamp(S.data) === false) return true; LS.set("wedding.demo", S.data); renderAll(); if (!opts.quiet) toast("Сохранено на этом устройстве"); return true; }
   setStatus("busy");
   for (let i = 0; i < 4; i++) {
     try {
       const fresh = await ghLoad();
       const d = fresh.data || seed();
-      stamp(d);
-      const r = await ghSave(d, fresh.sha, `${S.who}: ${text}`);
+      if (stamp(d) === false) { S.data = d; S.sha = fresh.sha; setStatus("ok"); renderAll(); return true; }
+      const r = await ghSave(d, fresh.sha, `${who}: ${text}`);
       if (r.conflict) continue;
       S.data = d; S.sha = r.sha; S.lastSync = new Date(); LS.set("wedding.cache", d);
-      setStatus("ok"); renderAll(); toast("Сохранено"); return true;
-    } catch (e) { setStatus("err", e.message || "Нет связи с GitHub"); toast("Не сохранилось: " + (e.message || "нет связи")); return false; }
+      setStatus("ok"); renderAll(); if (!opts.quiet) toast("Сохранено"); return true;
+    } catch (e) { setStatus("err", e.message || "Нет связи с GitHub"); if (!opts.quiet) toast("Не сохранилось: " + (e.message || "нет связи")); return false; }
   }
   setStatus("err", "Кто-то одновременно сохранял изменения. Обновите и попробуйте ещё раз.");
   return false;
@@ -534,16 +584,59 @@ function renderGuests() {
 }
 
 /* ================= Площадки ================= */
+function compareIds(d) {
+  const ids = d.venues.map(v => v.id);
+  let sel = (LS.get("wedding.cmp", null) || []).filter(x => ids.includes(x));
+  if (!sel.length) sel = ids.slice(0, 3);
+  return sel.slice(0, 3);
+}
+function renderCompare(d) {
+  if (!d.venues.length) return "";
+  const sel = compareIds(d);
+  const vs = sel.map(id => d.venues.find(v => v.id === id));
+  const gs = guestStats(d);
+  const known = vs.filter(venueKnown);
+  const minCost = known.length > 1 ? Math.min(...known.map(v => venueCost(v, d))) : null;
+  const dash = `<span class="muted">—</span>`;
+  const unk = `<span class="unk">Сметы пока нет</span>`;
+  const row = (label, cell, best) => `<div class="cmp-l">${label}</div>` + vs.map(v => `<div class="cmp-c${best && best(v) ? " best" : ""}">${cell(v)}</div>`).join("");
+  const txt = k => v => v[k] ? esc(v[k]) : dash;
+  return `
+  <div class="card">
+    <h2>Сравнение</h2>
+    <p class="small muted" style="margin:0 0 8px">Выберите до трёх площадок. Цены пересчитываются от числа гостей (сейчас ${gs.expected}) и ваших трат.</p>
+    <div class="chips">${d.venues.map(v => `<button class="chip" data-cmp="${v.id}" aria-pressed="${sel.includes(v.id)}">${esc(v.name)}</button>`).join("")}</div>
+    <div class="cmp" style="--n:${vs.length}">
+      <div class="cmp-corner"></div>
+      ${vs.map(v => `<div class="cmp-h"><button data-edit-venue="${v.id}">${esc(v.name)}</button>${v.chosen ? `<span class="pill chosen">Выбрана</span>` : ""}</div>`).join("")}
+      ${row("Смета площадки", v => venueKnown(v) ? `<b class="num">${rub(venueCost(v, d))}</b>${v.priceType === "За гостя" ? `<span class="sub">${rub(v.amount)} × ${gs.expected}</span>` : ""}${minCost !== null && venueCost(v, d) === minCost ? `<span class="tag">дешевле всех</span>` : ""}` : unk, v => minCost !== null && venueKnown(v) && venueCost(v, d) === minCost)}
+      ${row("На одного гостя", v => venueKnown(v) && gs.expected ? `<span class="num">${rub(venueCost(v, d) / gs.expected)}</span>` : dash)}
+      ${row("Вся свадьба с ней", v => venueKnown(v) ? `<span class="num">${rub(weddingWith(v, d).total)}</span>` : dash)}
+      ${row("Бюджет после", v => { if (!venueKnown(v)) return dash; const f = weddingWith(v, d).free; return f >= 0 ? `<span class="num" style="color:var(--good)">+${rub(f)}</span><span class="sub">свободно</span>` : `<span class="num" style="color:var(--bad)">−${rub(-f)}</span><span class="sub">перерасход</span>`; })}
+      ${row("Вместимость", v => v.capacity ? `<span class="num">до ${v.capacity}</span>${v.capacity < gs.max ? `<span class="sub" style="color:var(--bad)">меньше, чем гостей (${gs.max})</span>` : ""}` : dash)}
+      ${row("План на дождь", txt("rain"))}
+      ${row("Музыка до", txt("musicUntil"))}
+      ${row("Свой алкоголь", txt("alcohol"))}
+      ${row("Плюсы", txt("pros"))}
+      ${row("Минусы", txt("cons"))}
+      ${row("Внесено", v => v.paid ? `<span class="num">${rub(v.paid)}</span>` : dash)}
+      ${row("Контакт", txt("contact"))}
+      ${row("Заметка", txt("note"))}
+      <div class="cmp-corner"></div>
+      ${vs.map(v => `<div class="cmp-act"><button class="btn ghost" data-edit-venue="${v.id}">Изменить</button>${v.chosen ? "" : `<button class="btn" data-choose-venue="${v.id}">Выбрать</button>`}</div>`).join("")}
+    </div>
+  </div>`;
+}
 function renderVenues() {
   const d = S.data;
-  $("#tab-venues").innerHTML = `
+  $("#tab-venues").innerHTML = renderCompare(d) + `
   <div class="card">
-    <div class="row"><h2>Площадки</h2><span class="spacer"></span><button class="btn terra" data-act="add-venue">+ Площадка</button></div>
-    <p class="small muted" style="margin:0 0 6px">Выбранная площадка идёт в смету. Пока ничего не выбрано, считаем самый дорогой вариант.</p>
+    <div class="row"><h2>Все площадки</h2><span class="spacer"></span><button class="btn terra" data-act="add-venue">+ Площадка</button></div>
+    <p class="small muted" style="margin:0 0 6px">Выбранная площадка идёт в смету. Пока ничего не выбрано, считаем самый дорогой вариант со сметой.</p>
     <div class="list">${d.venues.map(v => `
       <button class="item" data-edit-venue="${v.id}">
         <span class="t">${esc(v.name)}${v.city ? ` <span class="muted small">· ${esc(v.city)}</span>` : ""}</span>
-        <span class="r"><b class="num">${rub(venueCost(v, d))}</b>${v.chosen ? `<span class="pill chosen">Выбрана</span>` : ""}</span>
+        <span class="r">${venueKnown(v) ? `<b class="num">${rub(venueCost(v, d))}</b>` : `<span class="small" style="color:var(--warn)">Сметы пока нет</span>`}${v.chosen ? `<span class="pill chosen">Выбрана</span>` : ""}</span>
         <span class="d">${v.priceType === "За гостя" ? `${rub(v.amount)} × ${guestStats(d).expected} гостей. ` : ""}${v.paid ? `Внесено ${rub(v.paid)}. ` : ""}${esc(v.note)}${v.contact ? ` · ${esc(v.contact)}` : ""}</span>
       </button>`).join("") || `<div class="empty">Добавьте первую площадку</div>`}
     </div>
@@ -680,9 +773,10 @@ function editGuest(id) {
     onDelete: id ? () => mutate(`удалил(а) гостя «${g.name}»`, d => { d.guests = d.guests.filter(x => x.id !== id); }) : null
   });
 }
-const LABELS = { name: "имя", side: "сторона", group: "группа", status: "статус", plusOne: "+1", note: "заметка", city: "город", priceType: "тип цены", amount: "цена", paid: "оплачено", contact: "контакт", chosen: "выбор", cat: "категория", title: "название", planned: "план", vendor: "подрядчик" };
+const LABELS = { capacity: "вместимость", rain: "план на дождь", musicUntil: "музыка до", alcohol: "свой алкоголь", pros: "плюсы", cons: "минусы", name: "имя", side: "сторона", group: "группа", status: "статус", plusOne: "+1", note: "заметка", city: "город", priceType: "тип цены", amount: "цена", paid: "оплачено", contact: "контакт", chosen: "выбор", cat: "категория", title: "название", planned: "план", vendor: "подрядчик" };
 function describeChange(k, a, b) {
-  if (k === "note") return "заметка";
+  if (k === "note" || k === "pros" || k === "cons") return LABELS[k];
+  if (k === "capacity") return `вместимость ${a || 0} → ${b || 0}`;
   if (typeof b === "number") return `${LABELS[k] || k} ${rub(a)} → ${rub(b)}`;
   if (typeof b === "boolean") return b ? "выбрана" : "снят выбор";
   return `${LABELS[k] || k}: ${a || "—"} → ${b || "—"}`;
@@ -690,8 +784,10 @@ function describeChange(k, a, b) {
 
 /* ---- Площадка ---- */
 function editVenue(id) {
-  const v0 = id ? S.data.venues.find(x => x.id === id) : { name: "", city: "Ульяновск", priceType: "Сумма за всё", amount: 0, paid: 0, contact: "", note: "", chosen: false };
-  if (!v0) return;
+  const blank = { name: "", city: "Ульяновск", priceType: "Сумма за всё", amount: 0, paid: 0, contact: "", note: "", chosen: false, capacity: 0, rain: "", musicUntil: "", alcohol: "", pros: "", cons: "" };
+  const found = id ? S.data.venues.find(x => x.id === id) : null;
+  if (id && !found) return;
+  const v0 = { ...blank, ...(found || {}) };
   openForm({
     title: id ? "Площадка" : "Новая площадка",
     fields: [
@@ -699,8 +795,14 @@ function editVenue(id) {
       { k: "city", label: "Город", half: 1 },
       { k: "contact", label: "Контакт (менеджер, телефон)", half: 1 },
       { k: "priceType", label: "Как считается цена", type: "select", options: V_PRICE, half: 1 },
-      { k: "amount", label: "Цена, ₽", type: "number", half: 1 },
-      { k: "paid", label: "Уже внесено, ₽", type: "number" },
+      { k: "amount", label: "Цена, ₽ (0 — сметы пока нет)", type: "number", half: 1 },
+      { k: "capacity", label: "Вместимость, человек", type: "number", half: 1 },
+      { k: "paid", label: "Уже внесено, ₽", type: "number", half: 1 },
+      { k: "rain", label: "План на дождь", half: 1 },
+      { k: "musicUntil", label: "Музыка до (время)", half: 1 },
+      { k: "alcohol", label: "Свой алкоголь (можно ли, пробковый сбор)" },
+      { k: "pros", label: "Плюсы", type: "textarea" },
+      { k: "cons", label: "Минусы", type: "textarea" },
       { k: "note", label: "Заметка", type: "textarea" },
       { k: "chosen", type: "check", text: "Это наша площадка — учитывать в смете" }
     ],
@@ -708,7 +810,7 @@ function editVenue(id) {
     onSave: v => {
       const apply = (d, vid) => { if (v.chosen) d.venues.forEach(x => x.chosen = false); const x = d.venues.find(y => y.id === vid); if (x) Object.assign(x, v); else d.venues.push({ id: vid, ...v }); };
       if (!id) { const nid = newId("v"); return mutate(`добавил(а) площадку «${v.name}»${v.chosen ? " и выбрал(а) её" : ""}`, d => apply(d, nid)); }
-      const ch = Object.keys(v).filter(k => (v0[k] ?? "") !== v[k]).map(k => describeChange(k, v0[k], v[k]));
+      const ch = Object.keys(v).filter(k => v0[k] !== v[k]).map(k => describeChange(k, v0[k], v[k]));
       if (!ch.length) return true;
       return mutate(`изменил(а) площадку «${v.name}»: ${ch.join(", ")}`, d => apply(d, id));
     },
@@ -780,13 +882,24 @@ function renderAll() {
   renderSync(); renderBanner(); renderHome(); renderGuests(); renderVenues(); renderMoney(); renderLog(); renderSettings(); renderFooter();
 }
 document.addEventListener("click", async ev => {
-  const t = ev.target.closest("[data-tab],[data-act],[data-edit-guest],[data-edit-venue],[data-edit-expense],[data-gf]");
+  const t = ev.target.closest("[data-tab],[data-act],[data-edit-guest],[data-edit-venue],[data-edit-expense],[data-gf],[data-cmp],[data-choose-venue]");
   if (!t) return;
   if (t.dataset.tab) return show(t.dataset.tab);
   if (t.dataset.editGuest) return editGuest(t.dataset.editGuest);
   if (t.dataset.editVenue) return editVenue(t.dataset.editVenue);
   if (t.dataset.editExpense) return editExpense(t.dataset.editExpense);
   if (t.dataset.gf) { S.gFilter[t.dataset.gf] = t.dataset.v; renderGuests(); return; }
+  if (t.dataset.cmp) {
+    const id = t.dataset.cmp; let sel = compareIds(S.data);
+    if (sel.includes(id)) { if (sel.length === 1) { toast("Оставьте хотя бы одну площадку"); return; } sel = sel.filter(x => x !== id); }
+    else { if (sel.length >= 3) { toast("Сравниваем три площадки. Сначала уберите одну"); return; } sel.push(id); }
+    LS.set("wedding.cmp", sel); renderVenues(); return;
+  }
+  if (t.dataset.chooseVenue) {
+    const id = t.dataset.chooseVenue, v = S.data.venues.find(x => x.id === id); if (!v) return;
+    mutate(`выбрал(а) площадку «${v.name}»`, d => { d.venues.forEach(x => x.chosen = x.id === id); });
+    return;
+  }
   const a = t.dataset.act;
   if (a === "add-guest") editGuest(null);
   else if (a === "add-venue") editVenue(null);
