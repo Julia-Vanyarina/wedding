@@ -138,6 +138,11 @@ textarea{min-height:70px;resize:vertical}
 .sec-h{display:flex;align-items:center;gap:8px;padding:16px 2px 6px}
 .sec-name{font-family:var(--f-display);font-size:18px;color:var(--olive);flex:1;min-width:0;overflow-wrap:anywhere}
 .notes{display:flex;flex-direction:column;gap:8px}
+.dayplan{display:flex;flex-direction:column}
+.pl{display:grid;grid-template-columns:96px 1fr auto;gap:12px;align-items:start;padding:10px 2px;border-bottom:1px solid var(--line)}
+.pl time{font-weight:600;color:var(--olive);padding-top:2px;font-size:15px}
+.pw{display:flex;flex-direction:column;gap:3px;min-width:0;overflow-wrap:anywhere;font-size:15.5px}
+@media (max-width:420px){.pl{grid-template-columns:78px 1fr auto;gap:8px}.pl time{font-size:14px}}
 .note{text-align:left;background:var(--olive-soft);border:0;border-radius:12px;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
 .ntext{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15.5px}
 /* Сравнение площадок: на телефоне подпись строки над тремя колонками, на компьютере — слева */
@@ -254,8 +259,10 @@ code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.
 <script>
 "use strict";
 /* ================= Версия приложения ================= */
-const APP_VERSION = "1.8.0";
+const APP_VERSION = "1.10.0";
 const APP_CHANGES = [
+  { v: "1.10.0", d: "24.10.2026", t: "План дня редактируется: время, что происходит, кто отвечает, заметка; пункты можно добавлять и удалять, порядок — по времени." },
+  { v: "1.9.0", d: "24.10.2026", t: "Новый формат дня: роспись в ЗАГСе, потом ресторан Radisson. Обновлены план дня и чек-лист, Radisson выбран площадкой, добавлен трансфер гостей." },
   { v: "1.8.0", d: "24.10.2026", t: "Кнопка «Проверить обновления»: приложение само узнаёт о новой версии на GitHub и обновляется одним нажатием, в обход кэша браузера." },
   { v: "1.7.0", d: "24.10.2026", t: "Чек-лист редактируется прямо в списке: у каждого пункта кнопка «Изменить», в каждом разделе «+ Пункт», раздел можно переименовать или удалить. Заметки к чек-листу. Убран пункт про обсуждение бюджета." },
   { v: "1.6.0", d: "24.10.2026", t: "Кто платит: у каждой траты и площадки — «Родители» или «Юля и Сева». Смета делится на части, лимит сравнивается с частью родителей. Заявление в ЗАГС отмечено поданным." },
@@ -321,8 +328,9 @@ const CHECKLIST = [
     "1 июля — дедлайн ответов гостей, дозвониться молчащим",
     "Назвать площадке точное число гостей, сделать рассадку",
     "Решить, кто привозит и увозит бабушек и дедушку",
-    "Назначить координатора дня, отдать ему тайминг и контакты подрядчиков",
-    "Официальная регистрация в ЗАГСе (если не в день свадьбы)"]],
+    "Заказать трансфер гостей из ЗАГСа в Radisson",
+    "Уточнить в ЗАГСе: время прибытия, сколько гостей пускают в зал, можно ли снимать",
+    "Назначить координатора дня, отдать ему тайминг и контакты подрядчиков"]],
   ["Август 2027", [
     "За 2 недели: финальная примерка, созвон со всеми подрядчиками, разослать тайминг",
     "За неделю: подписанные конверты с доплатой подрядчикам",
@@ -371,7 +379,7 @@ const EXTRAS = [
   { cat: "Десерты", title: "Десерты / кенди-бар", planned: 20000, note: "Оценка: 15 000–30 000 ₽" },
   { cat: "Видео", title: "Видеограф", planned: 35000, note: "Оценка: 25 000–50 000 ₽ за день с роликом" },
   { cat: "Ведущий", title: "Ведущий", planned: 60000, note: "Оценка: 25 000–150 000 ₽, чаще около 60 000 ₽ за вечер" },
-  { cat: "Музыка", title: "Музыканты на церемонию и фуршет", planned: 20000, note: "Оценка: дуэт 10 000–35 000 ₽" }
+  { cat: "Музыка", title: "Музыканты на фуршет", planned: 20000, note: "Оценка: дуэт 10 000–35 000 ₽" }
 ];
 function romanovsky(id) {
   return { id, name: "Зал Романовский", city: "Ульяновск", priceType: "За гостя", amount: 6000, guestsCalc: 60, equipment: 30000, corkage: 30000, servicePct: 10, otherFees: 0, includes: "", paid: 0, contact: "", note: "Примерный расчёт на 60 человек", chosen: false, capacity: 0, rain: "", musicUntil: "", alcohol: "Пробковый сбор 30 000 ₽", pros: "", cons: "" };
@@ -638,6 +646,22 @@ const MIGRATIONS = [
   } },
   { id: "drop-budget-task", text: "убран пункт чек-листа про обсуждение бюджета", fn: d => {
     d.tasks = (d.tasks || []).filter(x => !/бюджет и кто сколько вносит/i.test(x.text));
+  } },
+  { id: "zags-ceremony", text: "новый формат: роспись в ЗАГСе, потом ресторан Radisson — Radisson (зал) выбран площадкой, добавлен трансфер гостей, обновлён чек-лист", fn: d => {
+    const hall = d.venues.find(v => /radisson/i.test(v.name) && /зал/i.test(v.name));
+    if (hall) d.venues.forEach(v => v.chosen = v === hall);
+    if (!d.expenses.some(x => x.cat === "Транспорт")) d.expenses.push({ id: newId("e"), cat: "Транспорт", title: "Трансфер гостей из ЗАГСа в Radisson", planned: 15000, paid: 0, status: "Выбираем", vendor: "", note: "Оценка: автобус на 2–3 часа", payer: "Родители" });
+    d.expenses.forEach(x => { if (x.title === "Музыканты на церемонию и фуршет") x.title = "Музыканты на фуршет"; });
+    const tasks = d.tasks = d.tasks || [];
+    d.tasks = tasks.filter(x => !/Официальная регистрация в ЗАГСе/i.test(x.text));
+    const july = d.tasks.map(x => x.section).lastIndexOf("Июль 2027");
+    const add = ["Заказать трансфер гостей из ЗАГСа в Radisson", "Уточнить в ЗАГСе: время прибытия, сколько гостей пускают в зал, можно ли снимать"]
+      .filter(t => !d.tasks.some(x => x.text === t))
+      .map(text => ({ id: newId("t"), section: "Июль 2027", text, note: "", done: false, doneBy: "", doneAt: "" }));
+    if (july >= 0) d.tasks.splice(july + 1, 0, ...add); else d.tasks.push(...add);
+  } },
+  { id: "dayplan-1", text: "план дня перенесён в данные — теперь его можно редактировать", fn: d => {
+    if (!Array.isArray(d.dayPlan) || !d.dayPlan.length) d.dayPlan = DAY_PLAN.map(([time, what, who]) => ({ id: newId("p"), time, what, who, note: "" }));
   } },
   { id: "extras-1", text: "добавлены оценки трат: фуршет, десерты, видеограф, ведущий, музыканты", fn: d => {
     EXTRAS.forEach(x => { if (!d.expenses.some(e => e.title === x.title)) d.expenses.push({ id: newId("e"), cat: x.cat, title: x.title, planned: x.planned, paid: 0, status: "Выбираем", vendor: "", note: x.note }); });
@@ -930,20 +954,21 @@ function renderMoney() {
 /* ================= Чек-лист ================= */
 const DAY_PLAN = [
   ["08:30", "Нормально позавтракать", "Юля, Сева"], ["09:00–12:00", "Макияж и причёска", "Визажист; Аня следит за временем"],
-  ["10:00", "Декор и сервировка, зона церемонии", "Декоратор, менеджер площадки"], ["11:30", "Фотограф снимает детали и сборы", "Фотограф"],
-  ["12:30", "Невеста одевается", "Аня, мама"], ["13:00", "Первая встреча и фотосессия вдвоём", "Фотограф, Сева"],
-  ["13:45", "Выезд на площадку", "Свидетель (везёт кольца)"], ["14:00", "Сбор гостей, фуршет, музыка", "Координатор, площадка"],
-  ["14:45", "Гостей приглашают на церемонию", "Координатор"], ["15:00", "Выездная церемония, 20–25 минут", "Ведущий, музыканты"],
-  ["15:30", "Поздравления и общее фото всех гостей", "Фотограф, координатор"], ["15:50", "Семейные фото по списку", "Аня зовёт по списку"],
-  ["16:30", "Рассадка, ужин, первый тост родителей", "Площадка, координатор"], ["17:00–19:00", "Ужин и 6–8 тостов по 2–3 минуты", "Координатор, ведущий"],
-  ["19:00", "Первый танец", "DJ"], ["19:15", "Фото вдвоём на закате", "Фотограф"], ["19:40–23:00", "Танцы, десерты", "DJ, площадка"],
-  ["21:30", "Торт", "Менеджер площадки"], ["23:00", "Завершение, разъезд гостей", "Координатор"], ["23:15", "Забрать подарки, конверты, остатки торта", "Папа или друг"]
+  ["10:00", "Декор и сервировка в ресторане Radisson", "Менеджер Radisson (Татьяна)"], ["11:30", "Фотограф снимает детали и сборы", "Фотограф"],
+  ["12:30", "Невеста одевается", "Аня, мама"], ["13:00", "Первая встреча и фото вдвоём", "Фотограф, Сева"],
+  ["14:15", "Выезд в ЗАГС: кольца и паспорта с собой", "Свидетель"], ["14:30", "Гости собираются у ЗАГСа", "Координатор"],
+  ["15:00", "Роспись в ЗАГСе, 20–30 минут", "ЗАГС"], ["15:30", "Поздравления и общее фото всех гостей у ЗАГСа", "Фотограф, координатор"],
+  ["16:00", "Гости едут в Radisson; молодые — короткая фотопрогулка", "Трансфер, фотограф"], ["16:30", "Welcome-фуршет в Radisson, музыка", "Radisson, музыканты"],
+  ["17:00", "Семейные фото по списку", "Аня зовёт по списку"], ["17:30", "Рассадка, ужин, первый тост родителей", "Radisson, ведущий"],
+  ["18:00–19:40", "Ужин и тосты по 2–3 минуты", "Ведущий, DJ"], ["19:40", "Фото вдвоём на закате, 20 минут", "Фотограф"],
+  ["20:00", "Первый танец", "DJ"], ["20:00–23:00", "Танцы, десерты", "DJ, Radisson"], ["21:30", "Торт", "Менеджер Radisson"],
+  ["23:00", "Завершение, гости разъезжаются; молодые остаются в номере Radisson", "Координатор"], ["23:15", "Забрать подарки, конверты, остатки торта", "Папа или друг"]
 ];
 const RISKS = [
-  ["Сборы затягиваются", "Визажист начинает раньше, между блоками до 15:00 есть запас. Сокращаем фото вдвоём, а не церемонию."],
-  ["Погода", "План «Б» на дождь в договоре, решение в 9:00. Вода и тень на фуршете, пледы вечером."],
+  ["Сборы затягиваются", "Визажист начинает раньше, между блоками до 15:00 есть запас. Опоздать в ЗАГС нельзя — сокращаем фото вдвоём."],
+  ["Погода", "Зонты для фото у ЗАГСа, запасное место для общего фото под крышей. Вода в машинах."],
   ["Забытые вещи и деньги", "Кольца, паспорта, конверты — в одной сумке у свидетеля с вечера."],
-  ["Гости потерялись или опоздали", "В приглашении точка на карте, сбор в 14:00 и телефон координатора."],
+  ["Гости потерялись или опоздали", "В приглашении два адреса — ЗАГС и Radisson, сбор у ЗАГСа в 14:30, телефон координатора; трансфер для тех, кто без машины."],
   ["Тосты затягиваются, горячее остывает", "Список из 6–8 говорящих, по 3 минуты; координатор сверяет тосты с подачей блюд."]
 ];
 const RED_FLAGS = [
@@ -991,9 +1016,14 @@ function renderChecklist() {
       </div>`).join(""); }).join("") || `<div class="empty">${only ? "Всё сделано" : "Пунктов пока нет. Нажмите «+ Пункт»."}</div>`}
   </div>
   <div class="card">
-    <h2>План дня 27 августа</h2>
-    <p class="small muted" style="margin:0 0 8px">Церемония в 15:00. Координатор держит этот план и контакты всех подрядчиков.</p>
-    <div class="log">${DAY_PLAN.map(([tm, what, who]) => `<div class="e"><time class="num">${tm}</time><div>${esc(what)} <span class="muted small">· ${esc(who)}</span></div></div>`).join("")}</div>
+    <div class="row"><h2>План дня 27 августа</h2><span class="spacer"></span><button class="btn ghost" data-act="add-plan">+ Пункт плана</button></div>
+    <p class="small muted" style="margin:0 0 8px">Роспись в ЗАГСе, потом ресторан Radisson. Карандаш — изменить время, текст, ответственного или удалить пункт. Порядок — по времени.</p>
+    <div class="dayplan">${sortedPlan(d).map(x => `
+      <div class="pl">
+        <time class="num">${esc(x.time)}</time>
+        <div class="pw"><span>${esc(x.what)}</span>${x.who ? `<span class="tmeta">${esc(x.who)}</span>` : ""}${x.note ? `<span class="tnote">${esc(x.note)}</span>` : ""}</div>
+        <button class="icon-btn" data-edit-plan="${x.id}" aria-label="Изменить пункт плана" title="Изменить или удалить">✎</button>
+      </div>`).join("") || `<div class="empty">План пуст. Нажмите «+ Пункт плана».</div>`}</div>
   </div>
   <div class="grid2">
     <div class="card"><h2>Что чаще всего идёт не так</h2>
@@ -1001,6 +1031,31 @@ function renderChecklist() {
     <div class="card"><h2>Тревожные сигналы</h2><p class="small muted" style="margin:0 0 6px">Если видите такое — лучше искать другого подрядчика.</p>
       <div class="log">${RED_FLAGS.map(([a, b]) => `<div class="e"><time>${esc(a)}</time><div>${esc(b)}</div></div>`).join("")}</div></div>
   </div>`;
+}
+const timeKey = t => { const m = String(t || "").match(/(\d{1,2})[:.](\d{2})/); return m ? Number(m[1]) * 60 + Number(m[2]) : 9999; };
+function sortedPlan(d) { return (d.dayPlan || []).map((x, i) => ({ x, i })).sort((a, b) => timeKey(a.x.time) - timeKey(b.x.time) || a.i - b.i).map(o => o.x); }
+function editPlan(id) {
+  const p0 = id ? (S.data.dayPlan || []).find(x => x.id === id) : { time: "", what: "", who: "", note: "" };
+  if (!p0) return;
+  openForm({
+    title: id ? "Пункт плана дня" : "Новый пункт плана",
+    fields: [
+      { k: "time", label: "Время (например 15:00 или 18:00–19:40)", req: true, half: 1 },
+      { k: "who", label: "Кто отвечает", half: 1 },
+      { k: "what", label: "Что происходит", req: true, type: "textarea" },
+      { k: "note", label: "Заметка", type: "textarea" }
+    ],
+    value: p0,
+    deleteLabel: "Удалить пункт",
+    onSave: v => {
+      if (!id) { const nid = newId("p"); return mutate(`добавил(а) в план дня: ${v.time} — ${v.what.slice(0, 70)}`, d => { d.dayPlan = d.dayPlan || []; if (!d.dayPlan.some(x => x.id === nid)) d.dayPlan.push({ id: nid, ...v }); }); }
+      const ch = [];
+      if (p0.time !== v.time) ch.push(`время ${p0.time} → ${v.time}`); if (p0.what !== v.what) ch.push("текст"); if ((p0.who || "") !== v.who) ch.push(`отвечает: ${v.who || "—"}`); if ((p0.note || "") !== v.note) ch.push("заметка");
+      if (!ch.length) return true;
+      return mutate(`изменил(а) план дня «${v.what.slice(0, 60)}»: ${ch.join(", ")}`, d => { const x = (d.dayPlan || []).find(y => y.id === id); if (x) Object.assign(x, v); });
+    },
+    onDelete: id ? () => mutate(`удалил(а) из плана дня: ${p0.time} — ${p0.what.slice(0, 60)}`, d => { d.dayPlan = (d.dayPlan || []).filter(x => x.id !== id); }) : null
+  });
 }
 function editTask(id, section) {
   const secs = taskSections(S.data);
@@ -1295,7 +1350,7 @@ function renderAll() {
   renderSync(); renderBanner(); renderHome(); renderGuests(); renderVenues(); renderMoney(); renderChecklist(); renderLog(); renderSettings(); renderFooter();
 }
 document.addEventListener("click", async ev => {
-  const t = ev.target.closest("[data-tab],[data-act],[data-edit-guest],[data-edit-venue],[data-edit-expense],[data-gf],[data-cmp],[data-choose-venue],[data-tick],[data-edit-task],[data-tf],[data-pf],[data-add-in],[data-edit-sec],[data-edit-note]");
+  const t = ev.target.closest("[data-tab],[data-act],[data-edit-guest],[data-edit-venue],[data-edit-expense],[data-gf],[data-cmp],[data-choose-venue],[data-tick],[data-edit-task],[data-tf],[data-pf],[data-add-in],[data-edit-sec],[data-edit-note],[data-edit-plan]");
   if (!t) return;
   if (t.dataset.tab) return show(t.dataset.tab);
   if (t.dataset.editGuest) return editGuest(t.dataset.editGuest);
@@ -1308,6 +1363,7 @@ document.addEventListener("click", async ev => {
   if (t.dataset.addIn) return editTask(null, t.dataset.addIn);
   if (t.dataset.editSec) return editSection(t.dataset.editSec);
   if (t.dataset.editNote) return editNote(t.dataset.editNote);
+  if (t.dataset.editPlan) return editPlan(t.dataset.editPlan);
   if (t.dataset.tick) {
     const id = t.dataset.tick, x0 = (S.data.tasks || []).find(y => y.id === id); if (!x0) return;
     const val = !x0.done;
@@ -1337,6 +1393,7 @@ document.addEventListener("click", async ev => {
   else if (a === "add-task") editTask(null);
   else if (a === "add-section") editSection(null);
   else if (a === "add-note") editNote(null);
+  else if (a === "add-plan") editPlan(null);
   else if (a === "settings") show("settings");
   else if (a === "refresh") load();
   else if (a === "check-update") checkUpdate(true).then(() => { if (S.tab === "settings") renderSettings(); });
