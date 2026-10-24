@@ -60,7 +60,8 @@ header.top{padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,254,251,.96);backdrop-filter:blur(6px);border-top:1px solid var(--line);
   padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));display:flex;justify-content:center}
 nav.tabs .in{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;width:100%;max-width:720px}
-@media (max-width:420px){nav.tabs button{font-size:11px}nav.tabs button svg{width:22px;height:22px}}
+nav.tabs button{white-space:nowrap}
+@media (max-width:420px){nav.tabs button{font-size:10.5px;letter-spacing:-.01em}nav.tabs button svg{width:22px;height:22px}}
 nav.tabs button{background:none;border:0;border-radius:10px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12.5px;color:var(--muted);cursor:pointer}
 nav.tabs button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 nav.tabs button[aria-current="page"]{color:var(--terra);background:var(--terra-soft)}
@@ -122,6 +123,8 @@ textarea{min-height:70px;resize:vertical}
 .pill.ok{color:var(--good)} .pill.no{color:var(--bad)} .pill.q{color:var(--warn)} .pill.n{color:var(--muted)} .pill.sent{color:var(--sky)}
 .pill.chosen{background:var(--olive);color:var(--card);border-color:var(--olive)}
 .empty{padding:24px 6px;color:var(--muted);text-align:center}
+.fam{display:flex;flex-direction:column;gap:2px;margin-bottom:12px}
+.fam .meter{margin:6px 0 2px}
 .payers{display:flex;flex-direction:column;gap:6px;margin-top:12px;padding:10px 12px;background:var(--olive-soft);border-radius:10px}
 .task{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;padding:10px 2px;border-bottom:1px solid var(--line)}
 .tick{width:28px;height:28px;border-radius:8px;border:1.5px solid var(--olive);background:transparent;color:var(--card);font-size:16px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px}
@@ -259,8 +262,10 @@ code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.
 <script>
 "use strict";
 /* ================= Версия приложения ================= */
-const APP_VERSION = "1.10.0";
+const APP_VERSION = "1.12.0";
 const APP_CHANGES = [
+  { v: "1.12.0", d: "24.10.2026", t: "Ресторан оплачивается по гостям: каждая сторона платит за своих гостей, места жениха и невесты — пополам. Можно указать, сколько гостей ждём с каждой стороны, пока список не заполнен. У каждой стороны видно, из чего складывается её часть." },
+  { v: "1.11.0", d: "24.10.2026", t: "Смета по сторонам: потолок у родителей Юли и родителей Севы — по 500 000 ₽, общие траты делятся пополам. Траты Юли и Севы — отдельно, без лимита. Можно указать, что трату оплачивает одна сторона." },
   { v: "1.10.0", d: "24.10.2026", t: "План дня редактируется: время, что происходит, кто отвечает, заметка; пункты можно добавлять и удалять, порядок — по времени." },
   { v: "1.9.0", d: "24.10.2026", t: "Новый формат дня: роспись в ЗАГСе, потом ресторан Radisson. Обновлены план дня и чек-лист, Radisson выбран площадкой, добавлен трансфер гостей." },
   { v: "1.8.0", d: "24.10.2026", t: "Кнопка «Проверить обновления»: приложение само узнаёт о новой версии на GitHub и обновляется одним нажатием, в обход кэша браузера." },
@@ -281,7 +286,12 @@ const SIDES = ["Сева", "Юля"];
 const GROUPS = ["Пара", "Семья", "Родня", "Друзья"];
 const G_STATUS = ["В списке", "Приглашение отправлено", "Придёт", "Под вопросом", "Не придёт"];
 const PLUS = ["Нет", "Может быть", "Да"];
-const PAYERS = ["Родители", "Юля и Сева"];
+const FAMILIES = ["Родители Юли", "Родители Севы"];
+const COUPLE = "Юля и Сева";
+const BY_GUESTS = "По гостям";
+const PAYERS = ["Родители", BY_GUESTS, ...FAMILIES, COUPLE];
+const isParents = p => p === "Родители" || p === BY_GUESTS || FAMILIES.includes(p);
+const payerLabel = p => p === "Родители" ? "Родители (пополам)" : p === BY_GUESTS ? "Родители (каждая сторона за своих гостей)" : p;
 const OURS = ["Кольца", "Образ невесты", "Образ жениха", "Макияж и причёска", "Фотограф"];
 const payerOf = x => (x && x.payer) || "Родители";
 const E_STATUS = ["Выбираем", "Забронировано", "Оплачено частично", "Оплачено"];
@@ -448,7 +458,7 @@ function seed() {
   ];
   return {
     meta: { rev: 1, created: new Date().toISOString(), updated: new Date().toISOString(), appVersion: APP_VERSION, migrations: ["romanovsky", "romanovsky-price", "extras-1", "radisson-hall-quote", "guest-plan", "checklist-1", "payers-1", "zags-filed", "drop-budget-task"] },
-    budget: { limit: 700000, min: 600000, max: 800000, scope: "Родители" },
+    budget: { limit: 1000000, min: 600000, max: 1000000, scope: "Родители", caps: { "Родители Юли": 500000, "Родители Севы": 500000 } },
     guests, venues, expenses, tasks: checklistSeed(),
     guestPlan: { min: 60, max: 65, calc: 65 },
     log: [{ ts: new Date().toISOString(), who: "Приложение", text: "Созданы начальные данные из плана свадьбы" }]
@@ -494,6 +504,16 @@ function guestStats(d) {
   };
 }
 /* На сколько гостей считаем смету: план (60–65), пока список не заполнен, но не меньше, чем по списку */
+/* Сколько мест у каждой стороны: из плана, если он указан, иначе по списку; места жениха и невесты — пополам */
+function sideCounts(d) {
+  const gp = d.guestPlan || {};
+  const py = Number(gp.yulia) || 0, ps = Number(gp.seva) || 0;
+  if (py || ps) return { counts: [py, ps], from: "plan" };
+  const coming = d.guests.filter(x => x.status !== "Не придёт" && x.status !== "Под вопросом" && x.group !== "Пара");
+  const cnt = side => coming.filter(x => x.side === side).length + coming.filter(x => x.side === side && x.plusOne === "Да").length;
+  const couple = d.guests.filter(x => x.group === "Пара").length / 2;
+  return { counts: [cnt("Юля") + couple, cnt("Сева") + couple], from: "list" };
+}
 function guestsForCalc(d) {
   const listN = guestStats(d).expected;
   const plan = Number(d.guestPlan && d.guestPlan.calc) || 0;
@@ -530,22 +550,41 @@ function budgetCalc(d) {
   d.expenses.forEach(x => { if (cv.includes(x.cat)) return; const pl = Number(x.planned) || 0, pd = Number(x.paid) || 0; const c = cats[x.cat] || (cats[x.cat] = { plan: 0, paid: 0 }); c.plan += pl; c.paid += pd; addP(payerOf(x), pl, pd); });
   const plan = Object.values(cats).reduce((s, c) => s + c.plan, 0);
   const paid = Object.values(cats).reduce((s, c) => s + c.paid, 0);
-  const limit = Number(d.budget.limit) || 0;
-  const scope = d.budget.scope || "Все";
-  const scoped = scope === "Все" ? { plan, paid } : (byPayer[scope] || { plan: 0, paid: 0 });
-  return { venue, cats, plan, paid, limit, free: limit - scoped.plan, toPay: plan - paid, covered: cv, byPayer, scope, scoped };
+  // по категориям отдельно: за счёт родителей и за счёт Юли и Севы
+  const catsP = {}, catsC = {};
+  const addC = (o, k, pl, pd) => { const c = o[k] || (o[k] = { plan: 0, paid: 0 }); c.plan += pl; c.paid += pd; };
+  if (venue) addC(isParents(payerOf(venue.v)) ? catsP : catsC, "Площадка", venue.cost, venue.paid);
+  d.expenses.forEach(x => { if (cv.includes(x.cat)) return; addC(isParents(payerOf(x)) ? catsP : catsC, x.cat, Number(x.planned) || 0, Number(x.paid) || 0); });
+  // доли семей: общие траты родителей пополам
+  const caps = (d.budget && d.budget.caps) || {};
+  const shared = byPayer["Родители"] || { plan: 0, paid: 0 };
+  const byG = byPayer[BY_GUESTS] || { plan: 0, paid: 0 };
+  const half = (v, i) => i === 0 ? Math.floor(v / 2) : v - Math.floor(v / 2); // делим пополам без копеек
+  const sc = sideCounts(d);
+  const part = (v, i) => { const tot = sc.counts[0] + sc.counts[1]; if (!tot) return half(v, i); const a = Math.round(v * sc.counts[0] / tot); return i === 0 ? a : v - a; };
+  const fam = FAMILIES.map((f, i) => {
+    const own = byPayer[f] || { plan: 0, paid: 0 };
+    const g = part(byG.plan, i), h = half(shared.plan, i);
+    return { name: f, cap: Number(caps[f]) || 0, guests: sc.counts[i], byGuests: g, halfShare: h, own: own.plan,
+      plan: own.plan + g + h, paid: own.paid + part(byG.paid, i) + half(shared.paid, i) };
+  });
+  const parents = { plan: fam.reduce((s, f) => s + f.plan, 0), paid: fam.reduce((s, f) => s + f.paid, 0) };
+  const capsTotal = fam.reduce((s, f) => s + f.cap, 0);
+  const couple = byPayer[COUPLE] || { plan: 0, paid: 0 };
+  const scope = "Родители";
+  return { sc, venue, cats, catsP, catsC, plan, paid, limit: capsTotal, free: capsTotal - parents.plan, toPay: plan - paid, covered: cv, byPayer, scope, scoped: parents, fam, parents, capsTotal, couple };
 }
 /* Сколько стоит вся свадьба, если выбрать эту площадку */
 const covers = v => Array.isArray(v && v.covers) ? v.covers : [];
 function weddingWith(v, d) {
   const cv = covers(v);
-  const scope = d.budget.scope || "Все";
-  const inScope = p => scope === "Все" || p === scope;
   const exp = d.expenses.filter(x => !cv.includes(x.cat));
   const other = exp.reduce((s, x) => s + (Number(x.planned) || 0), 0);
   const total = venueCost(v, d) + other;
-  const scoped = (inScope(payerOf(v)) ? venueCost(v, d) : 0) + exp.filter(x => inScope(payerOf(x))).reduce((s, x) => s + (Number(x.planned) || 0), 0);
-  return { total, scoped, free: (Number(d.budget.limit) || 0) - scoped };
+  const scoped = (isParents(payerOf(v)) ? venueCost(v, d) : 0) + exp.filter(x => isParents(payerOf(x))).reduce((s, x) => s + (Number(x.planned) || 0), 0);
+  const caps = (d.budget && d.budget.caps) || {};
+  const capsTotal = FAMILIES.reduce((s, f) => s + (Number(caps[f]) || 0), 0);
+  return { total, scoped, free: capsTotal - scoped };
 }
 
 /* ================= GitHub ================= */
@@ -663,6 +702,14 @@ const MIGRATIONS = [
   { id: "dayplan-1", text: "план дня перенесён в данные — теперь его можно редактировать", fn: d => {
     if (!Array.isArray(d.dayPlan) || !d.dayPlan.length) d.dayPlan = DAY_PLAN.map(([time, what, who]) => ({ id: newId("p"), time, what, who, note: "" }));
   } },
+  { id: "family-caps", text: "потолок родителей — по 500 000 ₽ с каждой стороны (родители Юли и родители Севы), общие траты делятся пополам; траты Юли и Севы считаются отдельно", fn: d => {
+    d.budget = d.budget || {};
+    d.budget.caps = { "Родители Юли": 500000, "Родители Севы": 500000, ...(d.budget.caps || {}) };
+    d.budget.limit = 1000000; d.budget.scope = "Родители";
+  } },
+  { id: "venue-by-guests", text: "ресторан оплачивается по гостям: каждая сторона за своих, места жениха и невесты пополам; остальные траты родителей — пополам", fn: d => {
+    d.venues.forEach(v => { if (!v.payer || v.payer === "Родители") v.payer = BY_GUESTS; });
+  } },
   { id: "extras-1", text: "добавлены оценки трат: фуршет, десерты, видеограф, ведущий, музыканты", fn: d => {
     EXTRAS.forEach(x => { if (!d.expenses.some(e => e.title === x.title)) d.expenses.push({ id: newId("e"), cat: x.cat, title: x.title, planned: x.planned, paid: 0, status: "Выбираем", vendor: "", note: x.note }); });
   } }
@@ -773,26 +820,28 @@ function renderHome() {
     <div class="kpis">
       <div class="kpi"><b class="num">${planText(d)}</b><span>гостей ждём</span></div>
       <div class="kpi"><b class="num">${gs.total}</b><span>уже в списке</span></div>
-      <div class="kpi"><b class="num">${rub(b.plan)}</b><span>смета</span></div>
+      <div class="kpi"><b class="num">${rub(b.parents.plan)}</b><span>смета родителей</span></div>
     </div>
   </div>
   <div class="grid2">
     <div class="card">
-      <div class="row"><h2>Смета</h2><span class="spacer"></span><button class="btn ghost" data-act="edit-budget">Лимит</button></div>
-      <div class="row num"><span>${b.scope === "Все" ? "Лимит" : "Лимит: " + esc(b.scope.toLowerCase())}</span><span class="spacer"></span><b>${rub(b.limit)}</b></div>
-      <div class="meter ${over ? "over" : ""}" role="img" aria-label="План ${rub(b.scoped.plan)} из ${rub(b.limit)}, оплачено ${rub(b.scoped.paid)}">
-        <i class="plan" style="width:${pct(b.scoped.plan)}%"></i><i style="width:${pct(b.scoped.paid)}%"></i>
+      <div class="row"><h2>Смета</h2><span class="spacer"></span><button class="btn ghost" data-act="edit-budget">Потолок</button></div>
+      <p class="small muted" style="margin:0 0 10px">Ресторан каждая сторона оплачивает за своих гостей, остальное — пополам. Потолок — это максимум, а не цель.</p>
+      <p class="small" style="margin:0 0 10px">Ресторан делим по гостям: у Юли <b class="num">${fmtN(b.sc.counts[0])}</b>, у Севы <b class="num">${fmtN(b.sc.counts[1])}</b> ${b.sc.from === "plan" ? "(по плану)" : "(по списку — он ещё не полный)"}. <button class="linkbtn" data-act="edit-guest-plan">Указать</button></p>
+      ${b.fam.map(f => { const over = f.cap && f.plan > f.cap; return `
+        <div class="fam">
+          <div class="row num" style="flex-wrap:nowrap"><span>${esc(f.name)}</span><span class="spacer"></span><b>${rub(f.plan)}</b></div>
+          <div class="meter ${over ? "over" : ""}" role="img" aria-label="${esc(f.name)}: ${rub(f.plan)} из ${rub(f.cap)}"><i class="plan" style="width:${f.cap ? Math.min(100, f.plan / f.cap * 100) : 0}%"></i><i style="width:${f.cap ? Math.min(100, f.paid / f.cap * 100) : 0}%"></i></div>
+          <div class="small num ${over ? "" : "muted"}" ${over ? `style="color:var(--bad)"` : ""}>${f.byGuests ? `ресторан ${rub(f.byGuests)}` : ""}${f.halfShare ? ` + общее ${rub(f.halfShare)}` : ""}${f.own ? ` + своё ${rub(f.own)}` : ""}<br>из ${rub(f.cap)} · ${over ? `больше потолка на ${rub(f.plan - f.cap)}` : `до потолка ещё ${rub(f.cap - f.plan)}`}${f.paid ? ` · оплачено ${rub(f.paid)}` : ""}</div>
+        </div>`; }).join("")}
+      <div class="payers">
+        <div class="row num small"><span>Родители вместе</span><span class="spacer"></span><b>${rub(b.parents.plan)}</b><span class="muted">из ${rub(b.capsTotal)}</span></div>
+        <div class="row num small"><span>Юля и Сева</span><span class="spacer"></span><b>${rub(b.couple.plan)}</b><span class="muted">свои</span></div>
+        <div class="row num small" style="border-top:1px solid var(--line);padding-top:6px"><span>Вся свадьба</span><span class="spacer"></span><b>${rub(b.plan)}</b></div>
       </div>
-      <div class="row small num"><span class="muted">Оплачено ${rub(b.scoped.paid)}</span><span class="spacer"></span><span class="muted">План ${rub(b.scoped.plan)}</span></div>
-      <p class="num" style="margin:10px 0 0">${over ? `<b style="color:var(--bad)">Перерасход ${rub(b.scoped.plan - b.limit)}</b>` : `Свободно в бюджете: <b style="color:var(--good)">${rub(b.free)}</b>`}<br>
-      <span class="muted small">Бюджет ${rub(d.budget.min)} – ${rub(d.budget.max)}.</span></p>
-      <div class="payers">${Object.entries(b.byPayer).map(([p, o]) => `<div class="row num small"><span>${esc(p)}</span><span class="spacer"></span><b>${rub(o.plan)}</b>${o.paid ? `<span class="muted">· оплачено ${rub(o.paid)}</span>` : ""}</div>`).join("")}
-        <div class="row num small" style="border-top:1px solid var(--line);padding-top:6px"><span>Вся свадьба</span><span class="spacer"></span><b>${rub(b.plan)}</b></div></div>
       ${b.venue ? `<p class="small muted" style="margin:8px 0 0">Площадка в смете: ${esc(b.venue.v.name)} (${b.venue.why}).</p>` : ""}
-      <div class="cats">${cats.map(([k, c]) => `
-        <div class="cat"><div class="top num"><span>${esc(k)}</span><span>${rub(c.plan)}${c.paid ? ` <span class="muted small">· оплачено ${rub(c.paid)}</span>` : ""}</span></div>
-        <div class="meter" aria-hidden="true"><i class="plan" style="width:${c.plan / maxCat * 100}%"></i><i style="width:${c.paid / maxCat * 100}%"></i></div></div>`).join("")}
-      </div>
+      ${catList("За счёт родителей", b.catsP)}
+      ${catList("Юля и Сева", b.catsC)}
     </div>
     <div class="card">
       <div class="row"><h2>Гости</h2><span class="spacer"></span><button class="btn ghost" data-act="edit-guest-plan">Сколько ждём</button></div>
@@ -820,11 +869,24 @@ function editGuestPlan() {
     fields: [
       { k: "min", label: "От, человек", type: "number", half: 1 },
       { k: "max", label: "До, человек", type: "number", half: 1 },
-      { k: "calc", label: "На сколько гостей считать смету (0 — по списку)", type: "number" }
+      { k: "calc", label: "На сколько гостей считать смету (0 — по списку)", type: "number" },
+      { k: "yulia", label: "Из них со стороны Юли (с Юлей)", type: "number", half: 1 },
+      { k: "seva", label: "Со стороны Севы (с Севой)", type: "number", half: 1 }
     ],
     value: g,
-    onSave: v => { const ch = ["min", "max", "calc"].filter(k => (g[k] || 0) !== v[k]); if (!ch.length) return true; return mutate(`изменил(а) число гостей: ждём ${v.min}–${v.max}, смету считаем на ${v.calc || "список"}`, d => { d.guestPlan = v; }); }
+    onSave: v => { const ch = ["min", "max", "calc", "yulia", "seva"].filter(k => (g[k] || 0) !== v[k]); if (!ch.length) return true; return mutate(`изменил(а) число гостей: ждём ${v.min}–${v.max}, смету считаем на ${v.calc || "список"}${v.yulia || v.seva ? `; со стороны Юли ${v.yulia}, Севы ${v.seva}` : ""}`, d => { d.guestPlan = v; }); }
   });
+}
+const fmtN = n => Number.isInteger(n) ? String(n) : n.toFixed(1).replace(".", ",");
+function catList(title, cats) {
+  const list = Object.entries(cats).sort((a, c) => c[1].plan - a[1].plan);
+  if (!list.length) return "";
+  const max = Math.max(1, ...list.map(c => c[1].plan));
+  const sum = list.reduce((s, c) => s + c[1].plan, 0);
+  return `<div class="group-h" style="margin-top:8px"><span>${esc(title)}</span><span class="num small muted">${rub(sum)}</span></div>
+    <div class="cats">${list.map(([k, c]) => `
+      <div class="cat"><div class="top num"><span>${esc(k)}</span><span>${rub(c.plan)}${c.paid ? ` <span class="muted small">· оплачено ${rub(c.paid)}</span>` : ""}</span></div>
+      <div class="meter" aria-hidden="true"><i class="plan" style="width:${c.plan / max * 100}%"></i><i style="width:${c.paid / max * 100}%"></i></div></div>`).join("")}</div>`;
 }
 function logRow(e) { return `<div class="e"><time>${fmtDT(e.ts)}</time><div><span class="who">${esc(e.who)}</span> ${esc(e.text)}${e.rev ? ` <span class="muted small">· рев. ${e.rev}</span>` : ""}</div></div>`; }
 
@@ -889,8 +951,8 @@ function renderCompare(d) {
       ${row("Гостей в расчёте", v => { if (!venueKnown(v)) return dash; const p = venueParts(v, d); if (!p.n) return `<span class="num">${p.listN}</span><span class="sub">по плану гостей</span>`; return `<span class="num">${p.n}</span>${p.atList !== null ? `<span class="sub">при ${p.listN} гостях — ${p.approx ? "примерно " : ""}${rub(p.atList)}</span>` : ""}`; })}
       ${row("На одного гостя", v => { if (!venueKnown(v)) return dash; const p = venueParts(v, d); const n = p.n || gs.expected; return n ? `<span class="num">${rub(p.total / n)}</span>` : dash; })}
       ${row("Что входит", v => { const cv = covers(v); return (v.includes ? esc(v.includes) : "") + (cv.length ? `<span class="sub">не считаем отдельно: ${esc(cv.join(", ").toLowerCase())}</span>` : "") || dash; })}
-      ${row("Вся свадьба с ней", v => { if (!venueKnown(v)) return dash; const w = weddingWith(v, d); return `<span class="num">${rub(w.total)}</span>${(d.budget.scope || "Все") !== "Все" ? `<span class="sub">${esc(d.budget.scope.toLowerCase())}: ${rub(w.scoped)}</span>` : ""}`; })}
-      ${row("Бюджет после", v => { if (!venueKnown(v)) return dash; const f = weddingWith(v, d).free; return f >= 0 ? `<span class="num" style="color:var(--good)">+${rub(f)}</span><span class="sub">свободно</span>` : `<span class="num" style="color:var(--bad)">−${rub(-f)}</span><span class="sub">перерасход</span>`; })}
+      ${row("Вся свадьба с ней", v => { if (!venueKnown(v)) return dash; const w = weddingWith(v, d); return `<span class="num">${rub(w.total)}</span><span class="sub">родители: ${rub(w.scoped)}, по ${rub(w.scoped / 2)} с каждой стороны</span>`; })}
+      ${row("До потолка родителей", v => { if (!venueKnown(v)) return dash; const f = weddingWith(v, d).free; return f >= 0 ? `<span class="num" style="color:var(--good)">${rub(f)}</span><span class="sub">ещё можно потратить</span>` : `<span class="num" style="color:var(--bad)">−${rub(-f)}</span><span class="sub">больше потолка</span>`; })}
       ${row("Вместимость", v => v.capacity ? `<span class="num">до ${v.capacity}</span>${v.capacity < gs.max ? `<span class="sub" style="color:var(--bad)">меньше, чем гостей (${gs.max})</span>` : ""}` : dash)}
       ${row("План на дождь", txt("rain"))}
       ${row("Музыка до", txt("musicUntil"))}
@@ -934,19 +996,19 @@ function renderMoney() {
   <div class="card">
     <div class="row"><h2>Траты</h2><span class="spacer"></span><button class="btn terra" data-act="add-expense">+ Трата</button></div>
     <div class="kpis" style="margin:4px 0 8px">
-      <div class="kpi"><b class="num">${rub(b.plan)}</b><span>вся свадьба</span></div>
-      ${payers.map(p => `<div class="kpi"><b class="num">${rub(b.byPayer[p].plan)}</b><span>${esc(p)}</span></div>`).join("")}
+      ${b.fam.map(f => `<div class="kpi"><b class="num" style="color:${f.cap && f.plan > f.cap ? "var(--bad)" : "inherit"}">${rub(f.plan)}</b><span>${esc(f.name)} · из ${rub(f.cap)}</span></div>`).join("")}
+      <div class="kpi"><b class="num">${rub(b.couple.plan)}</b><span>Юля и Сева</span></div>
     </div>
-    <p class="small num" style="margin:0 0 10px">${b.scope === "Все" ? "Лимит" : "Лимит (" + esc(b.scope.toLowerCase()) + ")"} ${rub(b.limit)}: ${b.free < 0 ? `<b style="color:var(--bad)">перерасход ${rub(-b.free)}</b>` : `<b style="color:var(--good)">свободно ${rub(b.free)}</b>`}. Оплачено всего ${rub(b.paid)}.</p>
-    <div class="chips"><button class="chip" data-pf="all" aria-pressed="${pf === "all"}">Все</button>${payers.map(p => `<button class="chip" data-pf="${esc(p)}" aria-pressed="${pf === p}">Платят: ${esc(p)}</button>`).join("")}</div>
+    <p class="small num" style="margin:0 0 10px">Вся свадьба ${rub(b.plan)}. Родители вместе ${rub(b.parents.plan)} из ${rub(b.capsTotal)} — ${b.free < 0 ? `<b style="color:var(--bad)">больше потолка на ${rub(-b.free)}</b>` : `<b style="color:var(--good)">до потолка ещё ${rub(b.free)}</b>`}. Оплачено всего ${rub(b.paid)}.</p>
+    <div class="chips"><button class="chip" data-pf="all" aria-pressed="${pf === "all"}">Все</button>${payers.filter(p => p === "Родители" || p === COUPLE || d.expenses.some(x => payerOf(x) === p)).map(p => `<button class="chip" data-pf="${esc(p)}" aria-pressed="${pf === p}">${esc(payerLabel(p))}</button>`).join("")}</div>
     ${showVenue ? `<div class="group-h"><span>Площадка</span><span class="num small muted">${rub(b.venue.cost)}</span></div>
-      <button class="item" data-tab="venues"><span class="t">${esc(b.venue.v.name)}</span><span class="r"><b class="num">${rub(b.venue.cost)}</b></span><span class="d">Платят: ${esc(payerOf(b.venue.v))}. ${esc(b.venue.why)} · меняется во вкладке «Площадки»</span></button>` : ""}
+      <button class="item" data-tab="venues"><span class="t">${esc(b.venue.v.name)}</span><span class="r"><b class="num">${rub(b.venue.cost)}</b></span><span class="d">Платят: ${esc(payerLabel(payerOf(b.venue.v)))}. ${esc(b.venue.why)} · меняется во вкладке «Площадки»</span></button>` : ""}
     ${cats.map(c => { const items = exps.filter(x => x.cat === c); const sum = items.reduce((s, x) => s + (Number(x.planned) || 0), 0); const inV = b.covered.includes(c); return `
       <div class="group-h"><span>${esc(c)}</span><span class="num small muted">${inV ? "входит в площадку" : rub(sum)}</span></div>` + items.map(x => `
       <button class="item" data-edit-expense="${x.id}">
         <span class="t">${esc(x.title || x.cat)}</span>
         <span class="r">${inV ? `<s class="num muted">${rub(x.planned)}</s><span class="tag">в стоимости площадки</span>` : `<b class="num">${rub(x.planned)}</b>${ePill(x.status)}`}</span>
-        <span class="d">Платят: ${esc(payerOf(x))}. ${x.paid ? `Оплачено ${rub(x.paid)}. ` : ""}${x.vendor ? esc(x.vendor) + ". " : ""}${esc(x.note)}</span>
+        <span class="d">Платят: ${esc(payerLabel(payerOf(x)))}. ${x.paid ? `Оплачено ${rub(x.paid)}. ` : ""}${x.vendor ? esc(x.vendor) + ". " : ""}${esc(x.note)}</span>
       </button>`).join(""); }).join("") || `<div class="empty">Трат пока нет</div>`}
   </div>`;
 }
@@ -1240,7 +1302,7 @@ function describeChange(k, a, b) {
 
 /* ---- Площадка ---- */
 function editVenue(id) {
-  const blank = { payer: "Родители", covers: [], name: "", city: "Ульяновск", priceType: "Сумма за всё", amount: 0, guestsCalc: 0, equipment: 0, corkage: 0, servicePct: 0, otherFees: 0, includes: "", paid: 0, contact: "", note: "", chosen: false, capacity: 0, rain: "", musicUntil: "", alcohol: "", pros: "", cons: "" };
+  const blank = { payer: BY_GUESTS, covers: [], name: "", city: "Ульяновск", priceType: "Сумма за всё", amount: 0, guestsCalc: 0, equipment: 0, corkage: 0, servicePct: 0, otherFees: 0, includes: "", paid: 0, contact: "", note: "", chosen: false, capacity: 0, rain: "", musicUntil: "", alcohol: "", pros: "", cons: "" };
   const found = id ? S.data.venues.find(x => x.id === id) : null;
   if (id && !found) return;
   const v0 = { ...blank, ...(found || {}) };
@@ -1261,7 +1323,7 @@ function editVenue(id) {
       { k: "covers", label: "Эти траты уже входят в стоимость площадки — не считать отдельно", type: "multi", options: ["Фуршет", "Торт", "Десерты", "Музыка", "Декор", "Флористика", "Ведущий"] },
       { k: "capacity", label: "Вместимость, человек", type: "number", half: 1 },
       { k: "paid", label: "Уже внесено, ₽", type: "number", half: 1 },
-      { k: "payer", label: "Кто платит", list: PAYERS },
+      { k: "payer", label: "Кто платит («Родители» — пополам)", type: "select", options: PAYERS },
       { k: "rain", label: "План на дождь", half: 1 },
       { k: "musicUntil", label: "Музыка до (время)", half: 1 },
       { k: "alcohol", label: "Свой алкоголь (можно ли, пробковый сбор)" },
@@ -1296,7 +1358,7 @@ function editExpense(id) {
       { k: "title", label: "Что именно" },
       { k: "planned", label: "Стоимость по плану, ₽", type: "number", half: 1 },
       { k: "paid", label: "Уже оплачено, ₽", type: "number", half: 1 },
-      { k: "payer", label: "Кто платит", list: PAYERS, half: 1 },
+      { k: "payer", label: "Кто платит («Родители» — пополам)", type: "select", options: PAYERS, half: 1 },
       { k: "vendor", label: "Подрядчик (имя, контакт)", half: 1 },
       { k: "note", label: "Заметка", type: "textarea" }
     ],
@@ -1313,17 +1375,16 @@ function editExpense(id) {
 
 /* ---- Бюджет ---- */
 function editBudget() {
-  const b = S.data.budget;
+  const caps = (S.data.budget && S.data.budget.caps) || {};
   openForm({
-    title: "Бюджет",
-    fields: [
-      { k: "limit", label: "Лимит, с которым сравниваем смету, ₽", type: "number" },
-      { k: "scope", label: "С чем сравнивать лимит", type: "select", options: ["Родители", "Юля и Сева", "Все"] },
-      { k: "min", label: "Бюджет от, ₽", type: "number", half: 1 },
-      { k: "max", label: "Бюджет до, ₽", type: "number", half: 1 }
-    ],
-    value: { scope: "Все", ...b },
-    onSave: v => { const ch = Object.keys(v).filter(k => (b[k] ?? "Все") !== v[k]).map(k => k === "scope" ? `лимит сравниваем с: ${v[k] === "Все" ? "всеми тратами" : v[k].toLowerCase()}` : `${{ limit: "лимит", min: "от", max: "до" }[k]} ${rub(b[k])} → ${rub(v[k])}`); if (!ch.length) return true; return mutate(`изменил(а) бюджет: ${ch.join(", ")}`, d => { Object.assign(d.budget, v); }); }
+    title: "Потолок родителей",
+    fields: FAMILIES.map((f, i) => ({ k: "c" + i, label: `${f}, максимум ₽`, type: "number", half: 1 })),
+    value: Object.fromEntries(FAMILIES.map((f, i) => ["c" + i, Number(caps[f]) || 0])),
+    onSave: v => {
+      const ch = FAMILIES.filter((f, i) => (Number(caps[f]) || 0) !== v["c" + i]).map((f, i) => `${f.toLowerCase()}: ${rub(caps[f])} → ${rub(v["c" + FAMILIES.indexOf(f)])}`);
+      if (!ch.length) return true;
+      return mutate(`изменил(а) потолок: ${ch.join(", ")}`, d => { d.budget.caps = d.budget.caps || {}; FAMILIES.forEach((f, i) => d.budget.caps[f] = v["c" + i]); d.budget.limit = FAMILIES.reduce((s2, f) => s2 + (d.budget.caps[f] || 0), 0); });
+    }
   });
 }
 
