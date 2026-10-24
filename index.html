@@ -130,7 +130,16 @@ textarea{min-height:70px;resize:vertical}
 .task.done .ttext > span:first-child{color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(47,43,39,.3)}
 .tnote{font-size:14px;color:var(--ink);background:var(--olive-soft);border-radius:8px;padding:4px 8px}
 .tmeta{font-size:12.5px;color:var(--muted)}
-.tick:focus-visible,.ttext:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
+.tick:focus-visible,.icon-btn:focus-visible,.note:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
+.task{grid-template-columns:auto 1fr auto}
+.ttext{cursor:default}
+.icon-btn{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
+.icon-btn:hover{color:var(--olive);border-color:var(--olive)}
+.sec-h{display:flex;align-items:center;gap:8px;padding:16px 2px 6px}
+.sec-name{font-family:var(--f-display);font-size:18px;color:var(--olive);flex:1;min-width:0;overflow-wrap:anywhere}
+.notes{display:flex;flex-direction:column;gap:8px}
+.note{text-align:left;background:var(--olive-soft);border:0;border-radius:12px;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.ntext{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15.5px}
 /* Сравнение площадок: на телефоне подпись строки над тремя колонками, на компьютере — слева */
 .cmp{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));column-gap:10px;margin-top:12px}
 .cmp-corner{display:none}
@@ -177,6 +186,7 @@ dialog h3{font-size:26px}
 
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--card);padding:10px 16px;border-radius:12px;font-size:15px;z-index:50;max-width:calc(100vw - 32px)}
 @media (min-width:900px){.toast{bottom:24px}}
+.banner.update{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between;background:var(--olive-soft);border-color:rgba(107,122,75,.35);margin-bottom:10px}
 .banner{background:#F7F1E3;border:1px solid rgba(180,138,60,.35);border-radius:var(--r);padding:12px 14px;font-size:15px}
 footer{font-size:13.5px;color:var(--muted);text-align:center;padding:10px 0 20px}
 code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.92em;overflow-wrap:anywhere}
@@ -244,8 +254,10 @@ code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.
 <script>
 "use strict";
 /* ================= Версия приложения ================= */
-const APP_VERSION = "1.6.0";
+const APP_VERSION = "1.8.0";
 const APP_CHANGES = [
+  { v: "1.8.0", d: "24.10.2026", t: "Кнопка «Проверить обновления»: приложение само узнаёт о новой версии на GitHub и обновляется одним нажатием, в обход кэша браузера." },
+  { v: "1.7.0", d: "24.10.2026", t: "Чек-лист редактируется прямо в списке: у каждого пункта кнопка «Изменить», в каждом разделе «+ Пункт», раздел можно переименовать или удалить. Заметки к чек-листу. Убран пункт про обсуждение бюджета." },
   { v: "1.6.0", d: "24.10.2026", t: "Кто платит: у каждой траты и площадки — «Родители» или «Юля и Сева». Смета делится на части, лимит сравнивается с частью родителей. Заявление в ЗАГС отмечено поданным." },
   { v: "1.5.0", d: "24.10.2026", t: "Сколько гостей ждём всего (60–65): смета считается на это число, даже пока список не заполнен. Новая вкладка «Чек-лист»: задачи по месяцам, вопросы площадке, фотографу и Radisson, тревожные сигналы, план дня и что чаще всего идёт не так." },
   { v: "1.4.0", d: "24.10.2026", t: "Внесена смета Radisson (зал «Архангельский») от 20.10 на 60 гостей. У площадки можно отметить, какие траты уже входят в её стоимость (фуршет, торт…), — они не считаются дважды. Пересчёт на число гостей по списку для сметы «за всё»." },
@@ -280,7 +292,6 @@ const CHECKLIST = [
     "Канапе на фуршете по 30 штук каждого вида — можно ли добавить",
     "Сколько стоит оформление торта"]],
   ["Ноябрь 2026", [
-    "Утвердить с Севой бюджет и кто сколько вносит",
     "Собрать полный список гостей (60–65 человек)",
     "Получить сметы Radisson и Зала Романовского на одинаковое число гостей и сравнить",
     "Узнать на Госуслугах, когда откроется запись в ЗАГС на август 2027"]],
@@ -428,7 +439,7 @@ function seed() {
     ...EXTRAS.map(x => e(x.cat, x.title, x.planned, { note: x.note }))
   ];
   return {
-    meta: { rev: 1, created: new Date().toISOString(), updated: new Date().toISOString(), appVersion: APP_VERSION, migrations: ["romanovsky", "romanovsky-price", "extras-1", "radisson-hall-quote", "guest-plan", "checklist-1", "payers-1", "zags-filed"] },
+    meta: { rev: 1, created: new Date().toISOString(), updated: new Date().toISOString(), appVersion: APP_VERSION, migrations: ["romanovsky", "romanovsky-price", "extras-1", "radisson-hall-quote", "guest-plan", "checklist-1", "payers-1", "zags-filed", "drop-budget-task"] },
     budget: { limit: 700000, min: 600000, max: 800000, scope: "Родители" },
     guests, venues, expenses, tasks: checklistSeed(),
     guestPlan: { min: 60, max: 65, calc: 65 },
@@ -625,6 +636,9 @@ const MIGRATIONS = [
   { id: "zags-filed", text: "отмечено: заявление в ЗАГС подано", fn: d => {
     (d.tasks || []).forEach(x => { if (/заявление в ЗАГС|запись в ЗАГС/i.test(x.text) && !x.done) { x.done = true; x.doneBy = "Юля"; x.doneAt = new Date().toISOString(); if (!x.note) x.note = "Заявление подано"; } });
   } },
+  { id: "drop-budget-task", text: "убран пункт чек-листа про обсуждение бюджета", fn: d => {
+    d.tasks = (d.tasks || []).filter(x => !/бюджет и кто сколько вносит/i.test(x.text));
+  } },
   { id: "extras-1", text: "добавлены оценки трат: фуршет, десерты, видеограф, ведущий, музыканты", fn: d => {
     EXTRAS.forEach(x => { if (!d.expenses.some(e => e.title === x.title)) d.expenses.push({ id: newId("e"), cat: x.cat, title: x.title, planned: x.planned, paid: 0, status: "Выбираем", vendor: "", note: x.note }); });
   } }
@@ -691,11 +705,33 @@ function renderSync() {
 }
 function renderBanner() {
   const el = $("#banner");
-  el.innerHTML = S.mode === "demo" ? `<div class="banner">Сейчас данные хранятся только на этом устройстве. Чтобы родители видели и правили один и тот же список, подключите GitHub в <button class="linkbtn" data-act="settings">настройках</button>.</div>` : "";
+  el.innerHTML = (S.update ? `<div class="banner update"><span>Вышла новая версия приложения <b>${esc(S.update)}</b> (у вас ${APP_VERSION}).</span><button class="btn" data-act="apply-update">Обновить</button></div>` : "") +
+    (S.mode === "demo" ? `<div class="banner">Сейчас данные хранятся только на этом устройстве. Чтобы родители видели и правили один и тот же список, подключите GitHub в <button class="linkbtn" data-act="settings">настройках</button>.</div>` : "");
+}
+/* ---- Обновления приложения ---- */
+function cmpVer(a, b) { const x = a.split(".").map(Number), y = b.split(".").map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); } return 0; }
+async function checkUpdate(manual) {
+  if (location.protocol === "file:") { if (manual) toast("Проверка обновлений работает, когда приложение открыто с GitHub"); return; }
+  if (manual) toast("Проверяю…");
+  try {
+    // уникальный адрес — чтобы ни браузер, ни GitHub не отдали старую копию
+    const r = await fetch(location.pathname + "?check=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) throw new Error();
+    const m = (await r.text()).match(/const APP_VERSION = "([\d.]+)"/);
+    if (!m) throw new Error();
+    S.lastUpdateCheck = new Date();
+    if (cmpVer(m[1], APP_VERSION) > 0) { S.update = m[1]; renderBanner(); if (manual) toast("Есть новая версия " + m[1]); }
+    else { S.update = null; renderBanner(); if (manual) toast("У вас последняя версия " + APP_VERSION); }
+    renderFooter();
+  } catch { if (manual) toast("Не получилось проверить. Проверьте интернет и попробуйте ещё раз."); }
+}
+function applyUpdate() {
+  // открываем страницу по новому адресу, чтобы браузер точно взял свежий файл; подключение к GitHub сохраняется
+  location.replace(location.pathname + "?v=" + encodeURIComponent(S.update || Date.now()) + location.hash);
 }
 function renderFooter() {
   const d = S.data; const last = d.log[0];
-  $("#footer").innerHTML = `Версия приложения <b>${APP_VERSION}</b> · ревизия данных <b class="num">${d.meta.rev}</b>` +
+  $("#footer").innerHTML = `Версия приложения <b>${APP_VERSION}</b> · <button class="linkbtn" data-act="check-update">Проверить обновления</button><br>Ревизия данных <b class="num">${d.meta.rev}</b>` +
     (last ? ` · последнее изменение: ${esc(last.who)}, ${fmtDT(last.ts)}` : "");
 }
 
@@ -923,23 +959,36 @@ function checklistSummary(d) {
     <p class="small" style="margin:4px 0 0"><b class="num">${done}</b> из ${t.length} сделано.${next ? ` Дальше: ${esc(next.text)} <span class="muted">(${esc(next.section)})</span>` : ""}</p>
     <button class="btn ghost" data-tab="check" style="margin-top:10px">Открыть чек-лист</button>`;
 }
+function taskSections(d) { return [...new Set((d.tasks || []).map(x => x.section))]; }
 function renderChecklist() {
-  const d = S.data, t = d.tasks || [];
+  const d = S.data, t = d.tasks || [], notes = d.notes || [];
   const only = S.taskFilter === "open";
-  const sections = [...new Set(CHECKLIST.map(x => x[0]).concat(t.map(x => x.section)))];
+  const sections = taskSections(d);
   const done = t.filter(x => x.done).length;
   $("#tab-check").innerHTML = `
   <div class="card">
+    <div class="row"><h2>Заметки</h2><span class="spacer"></span><button class="btn ghost" data-act="add-note">+ Заметка</button></div>
+    ${notes.length ? `<div class="notes">${notes.map(n => `
+      <button class="note" data-edit-note="${n.id}"><span class="ntext">${esc(n.text)}</span><span class="tmeta">${esc(n.who)}, ${fmtDT(n.ts)}</span></button>`).join("")}</div>`
+      : `<p class="small muted" style="margin:0">Сюда можно записывать всё, что не помещается в пункты: идеи, договорённости, телефоны.</p>`}
+  </div>
+  <div class="card">
     <div class="row"><h2>Чек-лист</h2><span class="spacer"></span><button class="btn terra" data-act="add-task">+ Пункт</button></div>
     <div class="meter" aria-hidden="true"><i style="width:${t.length ? done / t.length * 100 : 0}%"></i></div>
-    <p class="small muted" style="margin:4px 0 10px">Сделано ${done} из ${t.length}. Отметку видят все. Нажмите на текст, чтобы записать ответ или заметку.</p>
-    <div class="chips"><button class="chip" data-tf="all" aria-pressed="${!only}">Все</button><button class="chip" data-tf="open" aria-pressed="${only}">Только несделанное</button></div>
-    ${sections.map(sec => { const items = t.filter(x => x.section === sec && (!only || !x.done)); if (!items.length) return ""; const all = t.filter(x => x.section === sec); return `
-      <div class="group-h"><span>${esc(sec)}</span><span class="num small muted">${all.filter(x => x.done).length} / ${all.length}</span></div>` + items.map(x => `
+    <p class="small muted" style="margin:4px 0 10px">Сделано ${done} из ${t.length}. Квадратик — отметить. Карандаш — изменить текст, раздел, добавить заметку или удалить пункт.</p>
+    <div class="chips"><button class="chip" data-tf="all" aria-pressed="${!only}">Все</button><button class="chip" data-tf="open" aria-pressed="${only}">Только несделанное</button><button class="chip" data-act="add-section">+ Раздел</button></div>
+    ${sections.map(sec => { const items = t.filter(x => x.section === sec && (!only || !x.done)); const all = t.filter(x => x.section === sec); if (only && !items.length) return ""; return `
+      <div class="sec-h">
+        <span class="sec-name">${esc(sec)}</span>
+        <span class="num small muted">${all.filter(x => x.done).length} / ${all.length}</span>
+        <button class="icon-btn" data-add-in="${esc(sec)}" aria-label="Добавить пункт в раздел «${esc(sec)}»" title="Добавить пункт">＋</button>
+        <button class="icon-btn" data-edit-sec="${esc(sec)}" aria-label="Переименовать или удалить раздел «${esc(sec)}»" title="Раздел">✎</button>
+      </div>` + items.map(x => `
       <div class="task${x.done ? " done" : ""}">
         <button class="tick" data-tick="${x.id}" role="checkbox" aria-checked="${!!x.done}" aria-label="${x.done ? "Снять отметку" : "Отметить выполненным"}">${x.done ? "✓" : ""}</button>
-        <button class="ttext" data-edit-task="${x.id}"><span>${esc(x.text)}</span>${x.note ? `<span class="tnote">${esc(x.note)}</span>` : ""}${x.done && x.doneBy ? `<span class="tmeta">${esc(x.doneBy)}, ${fmtDT(x.doneAt)}</span>` : ""}</button>
-      </div>`).join(""); }).join("") || `<div class="empty">Всё сделано</div>`}
+        <div class="ttext"><span>${esc(x.text)}</span>${x.note ? `<span class="tnote">${esc(x.note)}</span>` : ""}${x.done && x.doneBy ? `<span class="tmeta">${esc(x.doneBy)}, ${fmtDT(x.doneAt)}</span>` : ""}</div>
+        <button class="icon-btn" data-edit-task="${x.id}" aria-label="Изменить пункт" title="Изменить, заметка, удалить">✎</button>
+      </div>`).join(""); }).join("") || `<div class="empty">${only ? "Всё сделано" : "Пунктов пока нет. Нажмите «+ Пункт»."}</div>`}
   </div>
   <div class="card">
     <h2>План дня 27 августа</h2>
@@ -953,28 +1002,63 @@ function renderChecklist() {
       <div class="log">${RED_FLAGS.map(([a, b]) => `<div class="e"><time>${esc(a)}</time><div>${esc(b)}</div></div>`).join("")}</div></div>
   </div>`;
 }
-function editTask(id) {
-  const t0 = id ? (S.data.tasks || []).find(x => x.id === id) : { text: "", section: "Ноябрь 2026", note: "", done: false };
+function editTask(id, section) {
+  const secs = taskSections(S.data);
+  const t0 = id ? (S.data.tasks || []).find(x => x.id === id) : { text: "", section: section || secs[0] || "Общее", note: "", done: false };
   if (!t0) return;
-  const sections = [...new Set(CHECKLIST.map(x => x[0]).concat((S.data.tasks || []).map(x => x.section)))];
   openForm({
     title: id ? "Пункт чек-листа" : "Новый пункт",
     fields: [
       { k: "text", label: "Что сделать или спросить", req: true, type: "textarea" },
-      { k: "section", label: "Раздел", list: sections, req: true },
-      { k: "note", label: "Ответ или заметка", type: "textarea" },
+      { k: "section", label: "Раздел (можно вписать новый)", list: secs, req: true },
+      { k: "note", label: "Заметка или ответ", type: "textarea" },
       { k: "done", type: "check", text: "Сделано" }
     ],
     value: t0,
+    deleteLabel: "Удалить пункт",
     onSave: v => {
       const stampDone = x => { if (v.done && !x.done) { x.doneBy = S.who; x.doneAt = new Date().toISOString(); } if (!v.done) { x.doneBy = ""; x.doneAt = ""; } };
-      if (!id) { const nid = newId("t"); return mutate(`добавил(а) пункт чек-листа «${v.text}»`, d => { d.tasks = d.tasks || []; if (!d.tasks.some(x => x.id === nid)) { const x = { id: nid, doneBy: "", doneAt: "" }; stampDone(x); Object.assign(x, v); d.tasks.push(x); } }); }
+      if (!id) { const nid = newId("t"); return mutate(`добавил(а) пункт «${v.text.slice(0, 80)}» в раздел «${v.section}»`, d => { d.tasks = d.tasks || []; if (!d.tasks.some(x => x.id === nid)) { const x = { id: nid, doneBy: "", doneAt: "" }; stampDone(x); Object.assign(x, v); const last = d.tasks.map(y => y.section).lastIndexOf(v.section); if (last >= 0) d.tasks.splice(last + 1, 0, x); else d.tasks.push(x); } }); }
       const ch = [];
-      if (t0.text !== v.text) ch.push("текст"); if (t0.section !== v.section) ch.push(`раздел → ${v.section}`); if ((t0.note || "") !== v.note) ch.push(v.note ? `ответ: ${v.note.slice(0, 80)}` : "заметка удалена"); if (!!t0.done !== v.done) ch.push(v.done ? "сделано" : "снята отметка");
+      if (t0.text !== v.text) ch.push("текст"); if (t0.section !== v.section) ch.push(`раздел → ${v.section}`); if ((t0.note || "") !== v.note) ch.push(v.note ? `заметка: ${v.note.slice(0, 80)}` : "заметка удалена"); if (!!t0.done !== v.done) ch.push(v.done ? "сделано" : "снята отметка");
       if (!ch.length) return true;
       return mutate(`изменил(а) пункт «${v.text.slice(0, 70)}»: ${ch.join(", ")}`, d => { const x = (d.tasks || []).find(y => y.id === id); if (x) { stampDone(x); Object.assign(x, v); } });
     },
-    onDelete: id ? () => mutate(`удалил(а) пункт чек-листа «${t0.text.slice(0, 70)}»`, d => { d.tasks = (d.tasks || []).filter(x => x.id !== id); }) : null
+    onDelete: id ? () => mutate(`удалил(а) пункт «${t0.text.slice(0, 70)}»`, d => { d.tasks = (d.tasks || []).filter(x => x.id !== id); }) : null
+  });
+}
+function editSection(name) {
+  const isNew = !name;
+  const count = (S.data.tasks || []).filter(x => x.section === name).length;
+  openForm({
+    title: isNew ? "Новый раздел" : "Раздел",
+    fields: isNew
+      ? [{ k: "name", label: "Название раздела", req: true }, { k: "first", label: "Первый пункт", req: true, type: "textarea" }]
+      : [{ k: "name", label: "Название раздела", req: true }],
+    value: { name: name || "", first: "" },
+    deleteLabel: `Удалить раздел и ${count} ${plural(count, "пункт", "пункта", "пунктов")}`,
+    onSave: v => {
+      if (isNew) { const nid = newId("t"); return mutate(`добавил(а) раздел «${v.name}»`, d => { d.tasks = d.tasks || []; if (!d.tasks.some(x => x.id === nid)) d.tasks.unshift({ id: nid, section: v.name, text: v.first, note: "", done: false, doneBy: "", doneAt: "" }); }); }
+      if (v.name === name) return true;
+      return mutate(`переименовал(а) раздел «${name}» в «${v.name}»`, d => { (d.tasks || []).forEach(x => { if (x.section === name) x.section = v.name; }); });
+    },
+    onDelete: isNew ? null : () => mutate(`удалил(а) раздел «${name}» (${count} ${plural(count, "пункт", "пункта", "пунктов")})`, d => { d.tasks = (d.tasks || []).filter(x => x.section !== name); })
+  });
+}
+function editNote(id) {
+  const n0 = id ? (S.data.notes || []).find(x => x.id === id) : { text: "" };
+  if (!n0) return;
+  openForm({
+    title: id ? "Заметка" : "Новая заметка",
+    fields: [{ k: "text", label: "Текст", req: true, type: "textarea" }],
+    value: n0,
+    deleteLabel: "Удалить заметку",
+    onSave: v => {
+      if (!id) { const nid = newId("n"); return mutate(`добавил(а) заметку: ${v.text.slice(0, 80)}`, d => { d.notes = d.notes || []; if (!d.notes.some(x => x.id === nid)) d.notes.unshift({ id: nid, text: v.text, who: S.who, ts: new Date().toISOString() }); }); }
+      if (v.text === n0.text) return true;
+      return mutate(`изменил(а) заметку: ${v.text.slice(0, 80)}`, d => { const x = (d.notes || []).find(y => y.id === id); if (x) { x.text = v.text; x.who = S.who; x.ts = new Date().toISOString(); } });
+    },
+    onDelete: id ? () => mutate(`удалил(а) заметку: ${n0.text.slice(0, 60)}`, d => { d.notes = (d.notes || []).filter(x => x.id !== id); }) : null
   });
 }
 
@@ -1012,6 +1096,11 @@ function renderSettings() {
       <p class="small muted" style="margin:0">Ссылка для родителей уже содержит ключ: им достаточно открыть её один раз. Отправляйте её только родным, и не пересылайте адрес из строки браузера посторонним: в нём тоже есть ключ.</p>
       <div id="linkOut"></div>
     </form>
+  </div>
+  <div class="card">
+    <h2>Приложение</h2>
+    <p class="small" style="margin:0 0 10px">Установлена версия <b>${APP_VERSION}</b>.${S.lastUpdateCheck ? ` Проверено в ${S.lastUpdateCheck.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}.` : ""} Если вы загрузили новый файл на GitHub, подождите 1–2 минуты и нажмите кнопку.</p>
+    <div class="actions"><button class="btn" data-act="check-update">Проверить обновления</button>${S.update ? `<button class="btn terra" data-act="apply-update">Обновить до ${esc(S.update)}</button>` : ""}</div>
   </div>
   <div class="card">
     <h2>Копия данных</h2>
@@ -1206,7 +1295,7 @@ function renderAll() {
   renderSync(); renderBanner(); renderHome(); renderGuests(); renderVenues(); renderMoney(); renderChecklist(); renderLog(); renderSettings(); renderFooter();
 }
 document.addEventListener("click", async ev => {
-  const t = ev.target.closest("[data-tab],[data-act],[data-edit-guest],[data-edit-venue],[data-edit-expense],[data-gf],[data-cmp],[data-choose-venue],[data-tick],[data-edit-task],[data-tf],[data-pf]");
+  const t = ev.target.closest("[data-tab],[data-act],[data-edit-guest],[data-edit-venue],[data-edit-expense],[data-gf],[data-cmp],[data-choose-venue],[data-tick],[data-edit-task],[data-tf],[data-pf],[data-add-in],[data-edit-sec],[data-edit-note]");
   if (!t) return;
   if (t.dataset.tab) return show(t.dataset.tab);
   if (t.dataset.editGuest) return editGuest(t.dataset.editGuest);
@@ -1216,6 +1305,9 @@ document.addEventListener("click", async ev => {
   if (t.dataset.pf) { S.payFilter = t.dataset.pf; renderMoney(); return; }
   if (t.dataset.tf) { S.taskFilter = t.dataset.tf; renderChecklist(); return; }
   if (t.dataset.editTask) return editTask(t.dataset.editTask);
+  if (t.dataset.addIn) return editTask(null, t.dataset.addIn);
+  if (t.dataset.editSec) return editSection(t.dataset.editSec);
+  if (t.dataset.editNote) return editNote(t.dataset.editNote);
   if (t.dataset.tick) {
     const id = t.dataset.tick, x0 = (S.data.tasks || []).find(y => y.id === id); if (!x0) return;
     const val = !x0.done;
@@ -1243,8 +1335,12 @@ document.addEventListener("click", async ev => {
   else if (a === "edit-budget") editBudget();
   else if (a === "edit-guest-plan") editGuestPlan();
   else if (a === "add-task") editTask(null);
+  else if (a === "add-section") editSection(null);
+  else if (a === "add-note") editNote(null);
   else if (a === "settings") show("settings");
   else if (a === "refresh") load();
+  else if (a === "check-update") checkUpdate(true).then(() => { if (S.tab === "settings") renderSettings(); });
+  else if (a === "apply-update") applyUpdate();
   else if (a === "copy-link") copyLink();
   else if (a === "export") exportJson();
   else if (a === "disconnect") { forgetConnection(); S.cfg = null; S.mode = "demo"; load(); toast("GitHub отключён на этом устройстве"); }
@@ -1308,6 +1404,10 @@ function exportJson() {
   if (S.data) renderAll();
   show(LS.get("wedding.tab", "home"));
   load().then(() => { if (!S.who) askWho(); });
+  // сами проверяем обновления: при открытии, при возвращении в приложение и раз в 30 минут
+  setTimeout(() => checkUpdate(false), 1500);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) checkUpdate(false); });
+  setInterval(() => { if (!document.hidden) checkUpdate(false); }, 30 * 60000);
   // Подтягиваем чужие правки: при возврате в приложение и раз в минуту
   document.addEventListener("visibilitychange", () => { if (!document.hidden && S.mode === "github") load(true); });
   setInterval(() => { if (!document.hidden && S.mode === "github" && !$("#dlg").open) load(true); }, 60000);
