@@ -125,6 +125,9 @@ textarea{min-height:70px;resize:vertical}
 .empty{padding:24px 6px;color:var(--muted);text-align:center}
 .fam{display:flex;flex-direction:column;gap:2px;margin-bottom:12px}
 .fam .meter{margin:6px 0 2px}
+.split{margin:0 0 12px;font-size:14.5px}
+.split summary{cursor:pointer;color:var(--muted);font-size:14px}
+.split .row{padding:3px 0}
 .payers{display:flex;flex-direction:column;gap:6px;margin-top:12px;padding:10px 12px;background:var(--olive-soft);border-radius:10px}
 .task{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;padding:10px 2px;border-bottom:1px solid var(--line)}
 .tick{width:28px;height:28px;border-radius:8px;border:1.5px solid var(--olive);background:transparent;color:var(--card);font-size:16px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px}
@@ -262,8 +265,10 @@ code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.
 <script>
 "use strict";
 /* ================= Версия приложения ================= */
-const APP_VERSION = "1.12.0";
+const APP_VERSION = "1.13.1";
 const APP_CHANGES = [
+  { v: "1.13.1", d: "24.10.2026", t: "У гостя Алексей убрана подпись." },
+  { v: "1.13.0", d: "24.10.2026", t: "Смета показывается просто: «Родители» и «Молодожёны». Разбивка по сторонам убрана с главного экрана и спрятана в свёрнутый блок во вкладке «Траты»." },
   { v: "1.12.0", d: "24.10.2026", t: "Ресторан оплачивается по гостям: каждая сторона платит за своих гостей, места жениха и невесты — пополам. Можно указать, сколько гостей ждём с каждой стороны, пока список не заполнен. У каждой стороны видно, из чего складывается её часть." },
   { v: "1.11.0", d: "24.10.2026", t: "Смета по сторонам: потолок у родителей Юли и родителей Севы — по 500 000 ₽, общие траты делятся пополам. Траты Юли и Севы — отдельно, без лимита. Можно указать, что трату оплачивает одна сторона." },
   { v: "1.10.0", d: "24.10.2026", t: "План дня редактируется: время, что происходит, кто отвечает, заметка; пункты можно добавлять и удалять, порядок — по времени." },
@@ -291,7 +296,7 @@ const COUPLE = "Юля и Сева";
 const BY_GUESTS = "По гостям";
 const PAYERS = ["Родители", BY_GUESTS, ...FAMILIES, COUPLE];
 const isParents = p => p === "Родители" || p === BY_GUESTS || FAMILIES.includes(p);
-const payerLabel = p => p === "Родители" ? "Родители (пополам)" : p === BY_GUESTS ? "Родители (каждая сторона за своих гостей)" : p;
+const payerLabel = p => p === "Родители" ? "Родители (пополам)" : p === BY_GUESTS ? "Родители (за своих гостей)" : p === COUPLE ? "Молодожёны" : p;
 const OURS = ["Кольца", "Образ невесты", "Образ жениха", "Макияж и причёска", "Фотограф"];
 const payerOf = x => (x && x.payer) || "Родители";
 const E_STATUS = ["Выбираем", "Забронировано", "Оплачено частично", "Оплачено"];
@@ -401,7 +406,7 @@ function seed() {
     g("Сева", "Сева", "Пара", { status: "Придёт" }),
     g("Юля", "Юля", "Пара", { status: "Придёт" }),
     g("Мама Севы", "Сева", "Семья"),
-    g("Алексей", "Сева", "Семья", { note: "муж мамы Севы" }),
+    g("Алексей", "Сева", "Семья"),
     g("Бабушка", "Сева", "Семья"),
     g("Катя Кислицына", "Сева", "Родня", { note: "крёстная" }),
     g("Сергей Кислицын", "Сева", "Родня"),
@@ -710,6 +715,9 @@ const MIGRATIONS = [
   { id: "venue-by-guests", text: "ресторан оплачивается по гостям: каждая сторона за своих, места жениха и невесты пополам; остальные траты родителей — пополам", fn: d => {
     d.venues.forEach(v => { if (!v.payer || v.payer === "Родители") v.payer = BY_GUESTS; });
   } },
+  { id: "aleksey-note", text: "у гостя Алексей убрана подпись", fn: d => {
+    d.guests.forEach(g => { if (g.name === "Алексей" && /муж мамы/i.test(g.note || "")) g.note = ""; });
+  } },
   { id: "extras-1", text: "добавлены оценки трат: фуршет, десерты, видеограф, ведущий, музыканты", fn: d => {
     EXTRAS.forEach(x => { if (!d.expenses.some(e => e.title === x.title)) d.expenses.push({ id: newId("e"), cat: x.cat, title: x.title, planned: x.planned, paid: 0, status: "Выбираем", vendor: "", note: x.note }); });
   } }
@@ -826,22 +834,19 @@ function renderHome() {
   <div class="grid2">
     <div class="card">
       <div class="row"><h2>Смета</h2><span class="spacer"></span><button class="btn ghost" data-act="edit-budget">Потолок</button></div>
-      <p class="small muted" style="margin:0 0 10px">Ресторан каждая сторона оплачивает за своих гостей, остальное — пополам. Потолок — это максимум, а не цель.</p>
-      <p class="small" style="margin:0 0 10px">Ресторан делим по гостям: у Юли <b class="num">${fmtN(b.sc.counts[0])}</b>, у Севы <b class="num">${fmtN(b.sc.counts[1])}</b> ${b.sc.from === "plan" ? "(по плану)" : "(по списку — он ещё не полный)"}. <button class="linkbtn" data-act="edit-guest-plan">Указать</button></p>
-      ${b.fam.map(f => { const over = f.cap && f.plan > f.cap; return `
-        <div class="fam">
-          <div class="row num" style="flex-wrap:nowrap"><span>${esc(f.name)}</span><span class="spacer"></span><b>${rub(f.plan)}</b></div>
-          <div class="meter ${over ? "over" : ""}" role="img" aria-label="${esc(f.name)}: ${rub(f.plan)} из ${rub(f.cap)}"><i class="plan" style="width:${f.cap ? Math.min(100, f.plan / f.cap * 100) : 0}%"></i><i style="width:${f.cap ? Math.min(100, f.paid / f.cap * 100) : 0}%"></i></div>
-          <div class="small num ${over ? "" : "muted"}" ${over ? `style="color:var(--bad)"` : ""}>${f.byGuests ? `ресторан ${rub(f.byGuests)}` : ""}${f.halfShare ? ` + общее ${rub(f.halfShare)}` : ""}${f.own ? ` + своё ${rub(f.own)}` : ""}<br>из ${rub(f.cap)} · ${over ? `больше потолка на ${rub(f.plan - f.cap)}` : `до потолка ещё ${rub(f.cap - f.plan)}`}${f.paid ? ` · оплачено ${rub(f.paid)}` : ""}</div>
-        </div>`; }).join("")}
+      ${(() => { const over = b.capsTotal && b.parents.plan > b.capsTotal; return `
+      <div class="fam">
+        <div class="row num" style="flex-wrap:nowrap"><span>Родители</span><span class="spacer"></span><b>${rub(b.parents.plan)}</b></div>
+        <div class="meter ${over ? "over" : ""}" role="img" aria-label="Родители: ${rub(b.parents.plan)} из ${rub(b.capsTotal)}"><i class="plan" style="width:${b.capsTotal ? Math.min(100, b.parents.plan / b.capsTotal * 100) : 0}%"></i><i style="width:${b.capsTotal ? Math.min(100, b.parents.paid / b.capsTotal * 100) : 0}%"></i></div>
+        <div class="small num ${over ? "" : "muted"}" ${over ? `style="color:var(--bad)"` : ""}>потолок ${rub(b.capsTotal)} · ${over ? `больше на ${rub(b.parents.plan - b.capsTotal)}` : `ещё можно ${rub(b.capsTotal - b.parents.plan)}`}${b.parents.paid ? ` · оплачено ${rub(b.parents.paid)}` : ""}</div>
+      </div>`; })()}
       <div class="payers">
-        <div class="row num small"><span>Родители вместе</span><span class="spacer"></span><b>${rub(b.parents.plan)}</b><span class="muted">из ${rub(b.capsTotal)}</span></div>
-        <div class="row num small"><span>Юля и Сева</span><span class="spacer"></span><b>${rub(b.couple.plan)}</b><span class="muted">свои</span></div>
+        <div class="row num small"><span>Молодожёны</span><span class="spacer"></span><b>${rub(b.couple.plan)}</b></div>
         <div class="row num small" style="border-top:1px solid var(--line);padding-top:6px"><span>Вся свадьба</span><span class="spacer"></span><b>${rub(b.plan)}</b></div>
       </div>
       ${b.venue ? `<p class="small muted" style="margin:8px 0 0">Площадка в смете: ${esc(b.venue.v.name)} (${b.venue.why}).</p>` : ""}
       ${catList("За счёт родителей", b.catsP)}
-      ${catList("Юля и Сева", b.catsC)}
+      ${catList("Молодожёны", b.catsC)}
     </div>
     <div class="card">
       <div class="row"><h2>Гости</h2><span class="spacer"></span><button class="btn ghost" data-act="edit-guest-plan">Сколько ждём</button></div>
@@ -951,7 +956,7 @@ function renderCompare(d) {
       ${row("Гостей в расчёте", v => { if (!venueKnown(v)) return dash; const p = venueParts(v, d); if (!p.n) return `<span class="num">${p.listN}</span><span class="sub">по плану гостей</span>`; return `<span class="num">${p.n}</span>${p.atList !== null ? `<span class="sub">при ${p.listN} гостях — ${p.approx ? "примерно " : ""}${rub(p.atList)}</span>` : ""}`; })}
       ${row("На одного гостя", v => { if (!venueKnown(v)) return dash; const p = venueParts(v, d); const n = p.n || gs.expected; return n ? `<span class="num">${rub(p.total / n)}</span>` : dash; })}
       ${row("Что входит", v => { const cv = covers(v); return (v.includes ? esc(v.includes) : "") + (cv.length ? `<span class="sub">не считаем отдельно: ${esc(cv.join(", ").toLowerCase())}</span>` : "") || dash; })}
-      ${row("Вся свадьба с ней", v => { if (!venueKnown(v)) return dash; const w = weddingWith(v, d); return `<span class="num">${rub(w.total)}</span><span class="sub">родители: ${rub(w.scoped)}, по ${rub(w.scoped / 2)} с каждой стороны</span>`; })}
+      ${row("Вся свадьба с ней", v => { if (!venueKnown(v)) return dash; const w = weddingWith(v, d); return `<span class="num">${rub(w.total)}</span><span class="sub">родители: ${rub(w.scoped)}</span>`; })}
       ${row("До потолка родителей", v => { if (!venueKnown(v)) return dash; const f = weddingWith(v, d).free; return f >= 0 ? `<span class="num" style="color:var(--good)">${rub(f)}</span><span class="sub">ещё можно потратить</span>` : `<span class="num" style="color:var(--bad)">−${rub(-f)}</span><span class="sub">больше потолка</span>`; })}
       ${row("Вместимость", v => v.capacity ? `<span class="num">до ${v.capacity}</span>${v.capacity < gs.max ? `<span class="sub" style="color:var(--bad)">меньше, чем гостей (${gs.max})</span>` : ""}` : dash)}
       ${row("План на дождь", txt("rain"))}
@@ -996,11 +1001,17 @@ function renderMoney() {
   <div class="card">
     <div class="row"><h2>Траты</h2><span class="spacer"></span><button class="btn terra" data-act="add-expense">+ Трата</button></div>
     <div class="kpis" style="margin:4px 0 8px">
-      ${b.fam.map(f => `<div class="kpi"><b class="num" style="color:${f.cap && f.plan > f.cap ? "var(--bad)" : "inherit"}">${rub(f.plan)}</b><span>${esc(f.name)} · из ${rub(f.cap)}</span></div>`).join("")}
-      <div class="kpi"><b class="num">${rub(b.couple.plan)}</b><span>Юля и Сева</span></div>
+      <div class="kpi"><b class="num">${rub(b.parents.plan)}</b><span>Родители</span></div>
+      <div class="kpi"><b class="num">${rub(b.couple.plan)}</b><span>Молодожёны</span></div>
+      <div class="kpi"><b class="num">${rub(b.plan)}</b><span>Вся свадьба</span></div>
     </div>
-    <p class="small num" style="margin:0 0 10px">Вся свадьба ${rub(b.plan)}. Родители вместе ${rub(b.parents.plan)} из ${rub(b.capsTotal)} — ${b.free < 0 ? `<b style="color:var(--bad)">больше потолка на ${rub(-b.free)}</b>` : `<b style="color:var(--good)">до потолка ещё ${rub(b.free)}</b>`}. Оплачено всего ${rub(b.paid)}.</p>
-    <div class="chips"><button class="chip" data-pf="all" aria-pressed="${pf === "all"}">Все</button>${payers.filter(p => p === "Родители" || p === COUPLE || d.expenses.some(x => payerOf(x) === p)).map(p => `<button class="chip" data-pf="${esc(p)}" aria-pressed="${pf === p}">${esc(payerLabel(p))}</button>`).join("")}</div>
+    <p class="small num" style="margin:0 0 10px">Потолок родителей ${rub(b.capsTotal)} — ${b.free < 0 ? `<b style="color:var(--bad)">больше на ${rub(-b.free)}</b>` : `<b style="color:var(--good)">ещё можно ${rub(b.free)}</b>`}. Оплачено всего ${rub(b.paid)}.</p>
+    <details class="split">
+      <summary>Как делятся траты родителей</summary>
+      <p class="small muted" style="margin:6px 0">Ресторан каждая сторона оплачивает за своих гостей, остальное — пополам или как отмечено в трате. Гостей для расчёта: у Юли ${fmtN(b.sc.counts[0])}, у Севы ${fmtN(b.sc.counts[1])} ${b.sc.from === "plan" ? "(по плану)" : "(по списку)"}. <button class="linkbtn" data-act="edit-guest-plan">Указать</button></p>
+      ${b.fam.map(f => `<div class="row num small"><span>${esc(f.name)}</span><span class="spacer"></span><b>${rub(f.plan)}</b></div>`).join("")}
+    </details>
+    <div class="chips"><button class="chip" data-pf="all" aria-pressed="${pf === "all"}">Все</button>${payers.filter(p => p === "Родители" || p === COUPLE || d.expenses.some(x => payerOf(x) === p)).map(p => `<button class="chip" data-pf="${esc(p)}" aria-pressed="${pf === p}">${esc(payerLabel(p).replace(/ \(.*\)/, ""))}${p === "Родители" ? " (пополам)" : ""}</button>`).join("")}</div>
     ${showVenue ? `<div class="group-h"><span>Площадка</span><span class="num small muted">${rub(b.venue.cost)}</span></div>
       <button class="item" data-tab="venues"><span class="t">${esc(b.venue.v.name)}</span><span class="r"><b class="num">${rub(b.venue.cost)}</b></span><span class="d">Платят: ${esc(payerLabel(payerOf(b.venue.v)))}. ${esc(b.venue.why)} · меняется во вкладке «Площадки»</span></button>` : ""}
     ${cats.map(c => { const items = exps.filter(x => x.cat === c); const sum = items.reduce((s, x) => s + (Number(x.planned) || 0), 0); const inV = b.covered.includes(c); return `
@@ -1376,14 +1387,14 @@ function editExpense(id) {
 /* ---- Бюджет ---- */
 function editBudget() {
   const caps = (S.data.budget && S.data.budget.caps) || {};
+  const total = FAMILIES.reduce((a, f) => a + (Number(caps[f]) || 0), 0);
   openForm({
     title: "Потолок родителей",
-    fields: FAMILIES.map((f, i) => ({ k: "c" + i, label: `${f}, максимум ₽`, type: "number", half: 1 })),
-    value: Object.fromEntries(FAMILIES.map((f, i) => ["c" + i, Number(caps[f]) || 0])),
+    fields: [{ k: "total", label: "Сколько родители могут потратить вместе, максимум ₽", type: "number" }],
+    value: { total },
     onSave: v => {
-      const ch = FAMILIES.filter((f, i) => (Number(caps[f]) || 0) !== v["c" + i]).map((f, i) => `${f.toLowerCase()}: ${rub(caps[f])} → ${rub(v["c" + FAMILIES.indexOf(f)])}`);
-      if (!ch.length) return true;
-      return mutate(`изменил(а) потолок: ${ch.join(", ")}`, d => { d.budget.caps = d.budget.caps || {}; FAMILIES.forEach((f, i) => d.budget.caps[f] = v["c" + i]); d.budget.limit = FAMILIES.reduce((s2, f) => s2 + (d.budget.caps[f] || 0), 0); });
+      if (v.total === total) return true;
+      return mutate(`изменил(а) потолок родителей: ${rub(total)} → ${rub(v.total)}`, d => { d.budget.caps = {}; FAMILIES.forEach((f, i) => d.budget.caps[f] = i === 0 ? Math.floor(v.total / 2) : v.total - Math.floor(v.total / 2)); d.budget.limit = v.total; });
     }
   });
 }
