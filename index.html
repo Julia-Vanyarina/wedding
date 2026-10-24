@@ -1,0 +1,850 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#EFE6D6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Наша свадьба">
+<title>Свадьба Севы и Юлии</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Тоскана: тёплый камень, оливка, терракота; голубой — из палитры свадьбы, для ссылок и выбранного */
+:root{
+  --stone:#EFE6D6;
+  --card:#FAF6EE;
+  --ink:#3A2B22;
+  --muted:#7C6B5C;
+  --olive:#5E6B3C;
+  --olive-soft:#E3E5D2;
+  --terra:#B05E38;
+  --terra-soft:#F2DED2;
+  --sky:#4F7896;
+  --line:rgba(58,43,34,.14);
+  --good:#5E6B3C;
+  --warn:#B07A1E;
+  --bad:#A8432F;
+  --f-display:"Cormorant Garamond",Georgia,"Times New Roman",serif;
+  --f-body:"Alegreya Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --r:14px;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background-color:var(--stone);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.45;
+  padding-bottom:calc(84px + env(safe-area-inset-bottom,0px));
+}
+.wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0;line-height:1.1;text-wrap:balance}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+
+/* Шапка */
+header.top{padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:6px}
+.brand{display:flex;align-items:center;gap:14px}
+.brand svg{width:56px;height:40px;flex:none}
+.brand h1{font-size:clamp(28px,6vw,40px)}
+.brand .sub{font-size:15px;color:var(--muted);letter-spacing:.04em}
+.syncbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:14px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--olive);display:inline-block}
+.dot.demo{background:var(--warn)} .dot.err{background:var(--bad)} .dot.busy{background:var(--sky);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.linkbtn{background:none;border:0;padding:0;color:var(--sky);text-decoration:underline;cursor:pointer;font-size:14px}
+
+/* Навигация */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(250,246,238,.96);backdrop-filter:blur(6px);border-top:1px solid var(--line);
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));display:flex;justify-content:center}
+nav.tabs .in{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;width:100%;max-width:640px}
+nav.tabs button{background:none;border:0;border-radius:10px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12.5px;color:var(--muted);cursor:pointer}
+nav.tabs button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+nav.tabs button[aria-current="page"]{color:var(--terra);background:var(--terra-soft)}
+@media (min-width:900px){
+  body{padding-bottom:40px}
+  nav.tabs{position:sticky;top:0;bottom:auto;border-top:0;border-bottom:1px solid var(--line);padding-top:6px}
+  nav.tabs button{flex-direction:row;justify-content:center;gap:8px;font-size:15px;padding:10px 6px}
+}
+
+main{display:flex;flex-direction:column;gap:18px;padding-block:16px 24px}
+section[hidden]{display:none!important}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.card h2{font-size:26px;margin-bottom:10px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spacer{flex:1}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+@media (max-width:760px){.grid2{grid-template-columns:1fr}}
+
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--card);border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:500;display:inline-flex;align-items:center;gap:6px;min-height:40px}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.terra{background:var(--terra);border-color:var(--terra)}
+.btn.danger{background:transparent;color:var(--bad);border-color:var(--bad)}
+.btn.danger.armed{background:var(--bad);color:#fff}
+.btn:focus-visible,nav.tabs button:focus-visible,.item:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
+
+/* Сводка */
+.hero{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+.days{font-family:var(--f-display);font-size:64px;line-height:.9;color:var(--terra);font-weight:700}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.kpi{border-top:1px solid var(--line);padding-top:8px}
+.kpi b{display:block;font-family:var(--f-display);font-size:26px;font-weight:700}
+.kpi span{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+@media (max-width:520px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpis .kpi:nth-child(3){grid-column:1/-1}.hero{grid-template-columns:1fr}}
+
+.meter{height:12px;border-radius:999px;background:var(--olive-soft);overflow:hidden;position:relative;margin:8px 0 4px}
+.meter i{position:absolute;inset:0 auto 0 0;background:var(--olive);border-radius:999px}
+.meter i.plan{background:rgba(94,107,60,.35)}
+.meter.over i.plan{background:rgba(168,67,47,.4)}
+.cats{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.cat .top{display:flex;gap:8px;justify-content:space-between;font-size:15px}
+.cat .meter{height:8px;margin:4px 0 0}
+
+/* Списки */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.toolbar input[type=search]{flex:1 1 180px;min-width:0}
+input,select,textarea{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:40px;width:100%}
+textarea{min-height:70px;resize:vertical}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 12px;font-size:14px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--olive);border-color:var(--olive);color:var(--card)}
+.list{display:flex;flex-direction:column}
+.group-h{font-family:var(--f-display);font-size:20px;font-weight:600;padding:14px 2px 4px;color:var(--olive);display:flex;justify-content:space-between;align-items:baseline}
+.item{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-top:0;text-align:left;width:100%}
+.item:hover{background:rgba(255,255,255,.5)}
+.item .t{font-weight:500;min-width:0;overflow-wrap:anywhere}
+.item .d{font-size:14px;color:var(--muted);grid-column:1/2;min-width:0;overflow-wrap:anywhere}
+.item .r{grid-row:1/3;grid-column:2;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.pill{display:inline-block;font-size:12.5px;padding:2px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.pill.ok{color:var(--good)} .pill.no{color:var(--bad)} .pill.q{color:var(--warn)} .pill.n{color:var(--muted)} .pill.sent{color:var(--sky)}
+.pill.chosen{background:var(--olive);color:var(--card);border-color:var(--olive)}
+.empty{padding:24px 6px;color:var(--muted);text-align:center}
+
+/* Журнал */
+.log{display:flex;flex-direction:column}
+.log .e{display:grid;grid-template-columns:110px 1fr;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);font-size:15px}
+.log .e time{color:var(--muted);font-size:13.5px}
+.log .who{font-weight:700;color:var(--terra)}
+@media (max-width:520px){.log .e{grid-template-columns:1fr;gap:2px}}
+
+/* Диалог */
+dialog{border:0;border-radius:18px;padding:0;width:min(560px,calc(100vw - 24px));max-height:calc(100dvh - 24px);background:var(--card);color:var(--ink);box-shadow:0 20px 60px rgba(58,43,34,.3)}
+dialog::backdrop{background:rgba(58,43,34,.4)}
+dialog form{display:flex;flex-direction:column;gap:12px;padding:20px}
+dialog h3{font-size:28px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:14px;color:var(--muted)}
+.fields2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:440px){.fields2{grid-template-columns:1fr}}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.err{color:var(--bad);font-size:14px}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--card);padding:10px 16px;border-radius:12px;font-size:15px;z-index:50;max-width:calc(100vw - 32px)}
+@media (min-width:900px){.toast{bottom:24px}}
+.banner{background:var(--terra-soft);border:1px solid rgba(176,94,56,.3);border-radius:var(--r);padding:12px 14px;font-size:15px}
+footer{font-size:13.5px;color:var(--muted);text-align:center;padding:10px 0 20px}
+code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.92em;overflow-wrap:anywhere}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-guests" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.3 3-5 6-5s5.4 1.7 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c2.6 0 4.4 1.5 5 4"/></symbol>
+  <symbol id="i-venue" viewBox="0 0 24 24"><path d="M3 20h18M5 20V10l7-5 7 5v10"/><path d="M10 20v-5a2 2 0 0 1 4 0v5"/></symbol>
+  <symbol id="i-money" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9v.01M18 15v.01"/></symbol>
+  <symbol id="i-log" viewBox="0 0 24 24"><path d="M7 4h10a1 1 0 0 1 1 1v15l-3-2-3 2-3-2-3 2V5a1 1 0 0 1 1-1z"/><path d="M9 9h6M9 13h4"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></symbol>
+</svg>
+
+<header class="top wrap">
+  <div class="brand">
+    <svg viewBox="0 0 56 40" aria-hidden="true">
+      <path d="M4 34 C18 30 32 20 52 6" fill="none" stroke="#5E6B3C" stroke-width="1.6" stroke-linecap="round"/>
+      <g fill="#5E6B3C" opacity=".85">
+        <ellipse cx="14" cy="27" rx="6" ry="2.2" transform="rotate(-50 14 27)"/>
+        <ellipse cx="18" cy="33" rx="6" ry="2.2" transform="rotate(10 18 33)"/>
+        <ellipse cx="27" cy="20" rx="6.5" ry="2.3" transform="rotate(-55 27 20)"/>
+        <ellipse cx="32" cy="25" rx="6.5" ry="2.3" transform="rotate(5 32 25)"/>
+        <ellipse cx="40" cy="12" rx="6" ry="2.2" transform="rotate(-60 40 12)"/>
+        <ellipse cx="45" cy="16" rx="6" ry="2.2" transform="rotate(0 45 16)"/>
+      </g>
+      <circle cx="23" cy="27" r="2.6" fill="#3A2B22"/><circle cx="37" cy="19" r="2.4" fill="#3A2B22"/>
+    </svg>
+    <div>
+      <h1>Сева и Юлия</h1>
+      <div class="sub">27 августа 2027 · учёт свадьбы</div>
+    </div>
+  </div>
+  <div class="syncbar" id="syncbar"></div>
+</header>
+
+<nav class="tabs" aria-label="Разделы">
+  <div class="in">
+    <button data-tab="home"><svg><use href="#i-home"/></svg>Обзор</button>
+    <button data-tab="guests"><svg><use href="#i-guests"/></svg>Гости</button>
+    <button data-tab="venues"><svg><use href="#i-venue"/></svg>Площадки</button>
+    <button data-tab="money"><svg><use href="#i-money"/></svg>Траты</button>
+    <button data-tab="log"><svg><use href="#i-log"/></svg>Журнал</button>
+  </div>
+</nav>
+
+<main class="wrap">
+  <div id="banner"></div>
+  <section id="tab-home"></section>
+  <section id="tab-guests" hidden></section>
+  <section id="tab-venues" hidden></section>
+  <section id="tab-money" hidden></section>
+  <section id="tab-log" hidden></section>
+  <section id="tab-settings" hidden></section>
+</main>
+<footer class="wrap" id="footer"></footer>
+
+<dialog id="dlg"><form method="dialog" id="dlgForm"></form></dialog>
+
+<script>
+"use strict";
+/* ================= Версия приложения ================= */
+const APP_VERSION = "1.0.0";
+const APP_CHANGES = [
+  { v: "1.0.0", d: "24.10.2026", t: "Первая версия: гости, площадки, траты, смета, журнал изменений, синхронизация через GitHub." }
+];
+const WEDDING_DATE = new Date("2027-08-27T15:00:00+03:00");
+const DATA_PATH = "data.json";
+
+/* ================= Справочники ================= */
+const SIDES = ["Сева", "Юля"];
+const GROUPS = ["Пара", "Семья", "Родня", "Друзья"];
+const G_STATUS = ["В списке", "Приглашение отправлено", "Придёт", "Под вопросом", "Не придёт"];
+const PLUS = ["Нет", "Может быть", "Да"];
+const E_STATUS = ["Выбираем", "Забронировано", "Оплачено частично", "Оплачено"];
+const E_CATS = ["Площадка", "Фотограф", "Видео", "Кольца", "Декор", "Флористика", "Образ невесты", "Образ жениха", "Макияж и причёска", "Музыка", "Ведущий", "Торт", "Транспорт", "Полиграфия", "Прочее"];
+const V_PRICE = ["Сумма за всё", "За гостя"];
+
+/* ================= Начальные данные (из плана свадьбы) ================= */
+function seed() {
+  let n = 0; const id = p => p + (++n).toString(36) + Math.random().toString(36).slice(2, 6);
+  const g = (name, side, group, extra = {}) => ({ id: id("g"), name, side, group, status: "В списке", plusOne: "Нет", note: "", ...extra });
+  const guests = [
+    g("Сева", "Сева", "Пара", { status: "Придёт" }),
+    g("Юля", "Юля", "Пара", { status: "Придёт" }),
+    g("Мама Севы", "Сева", "Семья"),
+    g("Алексей", "Сева", "Семья", { note: "муж мамы Севы" }),
+    g("Бабушка", "Сева", "Семья"),
+    g("Катя Кислицына", "Сева", "Родня", { note: "крёстная" }),
+    g("Сергей Кислицын", "Сева", "Родня"),
+    g("Арсений Кислицын", "Сева", "Родня", { note: "сын" }),
+    g("Катя", "Сева", "Друзья", { note: "пара с Гаврилой" }),
+    g("Гаврила", "Сева", "Друзья"),
+    g("Олег", "Сева", "Друзья", { plusOne: "Может быть" }),
+    g("Семён", "Сева", "Друзья", { plusOne: "Может быть" }),
+    g("Слава", "Сева", "Друзья", { plusOne: "Может быть" }),
+    g("Мама", "Юля", "Семья"),
+    g("Папа", "Юля", "Семья"),
+    g("Аня", "Юля", "Семья", { note: "сестра" }),
+    g("Бабушка Галя", "Юля", "Семья"),
+    g("Бабушка Таня", "Юля", "Семья"),
+    g("Дедушка", "Юля", "Семья"),
+    g("т. Зина Ковалёва", "Юля", "Родня"),
+    g("д. Лёша Ковалёв", "Юля", "Родня"),
+    g("Артём Ковалёв", "Юля", "Родня"),
+    g("Юля Ковалёва", "Юля", "Родня"),
+    g("Юля Вирясова", "Юля", "Друзья"),
+    g("Дима Вирясов", "Юля", "Друзья"),
+    g("Ольга Мухина", "Юля", "Друзья"),
+    g("Дима Мухин", "Юля", "Друзья"),
+    g("Оля Уфимцева", "Юля", "Друзья"),
+    g("Толя Логинов", "Юля", "Друзья"),
+    g("Никита Уфимцев", "Юля", "Друзья"),
+    g("Егор Ванярин", "Юля", "Друзья"),
+    g("Эдик Криков", "Юля", "Друзья"),
+    g("Нэля Крикова", "Юля", "Друзья"),
+    g("Саня Носков", "Юля", "Друзья"),
+    g("Света Носкова", "Юля", "Друзья"),
+    g("Серёжа", "Юля", "Друзья"),
+    g("Люда", "Юля", "Друзья"),
+    g("Олег Ванярин", "Юля", "Друзья"),
+    g("Линара", "Юля", "Друзья"),
+    g("Василиса", "Юля", "Друзья", { status: "Под вопросом" })
+  ];
+  const venues = [
+    { id: id("v"), name: "Radisson — зал", city: "Ульяновск", priceType: "Сумма за всё", amount: 430000, paid: 0, contact: "", note: "Оценка из плана, ждём смету на 45 гостей", chosen: false },
+    { id: id("v"), name: "Radisson — веранда", city: "Ульяновск", priceType: "Сумма за всё", amount: 500000, paid: 0, contact: "", note: "Оценка из плана. Уточнить план «Б» на дождь", chosen: false }
+  ];
+  const e = (cat, title, planned, extra = {}) => ({ id: id("e"), cat, title, planned, paid: 0, status: "Выбираем", vendor: "", note: "", ...extra });
+  const expenses = [
+    e("Фотограф", "Фотограф, 8 часов", 48000, { note: "5 000–7 000 ₽ в час" }),
+    e("Кольца", "Обручальные кольца", 0, { note: "Укажите сумму" }),
+    e("Декор", "Декор с AliExpress: стол, свечи, оливковые ветви", 18000, { note: "24 000 ₽, если салфетки свои" }),
+    e("Образ невесты", "Платье, обувь, серьги", 35000),
+    e("Образ жениха", "Костюм, рубашка, обувь", 15000),
+    e("Макияж и причёска", "С пробным образом", 10000),
+    e("Музыка", "DJ на вечер", 15000),
+    e("Торт", "Торт и мелочи", 15000)
+  ];
+  return {
+    meta: { rev: 1, created: new Date().toISOString(), updated: new Date().toISOString(), appVersion: APP_VERSION },
+    budget: { limit: 700000, min: 600000, max: 800000 },
+    guests, venues, expenses,
+    log: [{ ts: new Date().toISOString(), who: "Приложение", text: "Созданы начальные данные из плана свадьбы" }]
+  };
+}
+
+/* ================= Состояние ================= */
+const S = {
+  data: null, sha: null, mode: "demo", status: "idle", lastSync: null, error: "",
+  cfg: null, who: "", tab: "home",
+  gFilter: { q: "", side: "all", status: "all" }
+};
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} }
+};
+
+/* ================= Утилиты ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const rub = n => (Math.round(Number(n) || 0)).toLocaleString("ru-RU").replace(/,/g, " ") + " ₽";
+const newId = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const fmtDT = iso => { const d = new Date(iso); return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "2-digit" }) + " " + d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }); };
+const plural = (n, a, b, c) => { const m10 = n % 10, m100 = n % 100; return m10 === 1 && m100 !== 11 ? a : m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20) ? b : c; };
+function toast(msg) { const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2600); }
+function b64encode(str) { const bytes = new TextEncoder().encode(str); let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(bin); }
+function b64decode(b64) { const bin = atob(b64.replace(/\s/g, "")); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i); return new TextDecoder().decode(bytes); }
+
+/* ================= Расчёты ================= */
+function guestStats(d) {
+  const real = d.guests;
+  const coming = real.filter(x => x.status !== "Не придёт" && x.status !== "Под вопросом");
+  const maybe = real.filter(x => x.status === "Под вопросом");
+  const plusYes = coming.filter(x => x.plusOne === "Да").length;
+  const plusMaybe = coming.filter(x => x.plusOne === "Может быть").length;
+  const expected = coming.length + plusYes;
+  return {
+    total: real.length, expected, max: expected + plusMaybe + maybe.length, plusMaybe, maybe: maybe.length,
+    confirmed: real.filter(x => x.status === "Придёт").length + real.filter(x => x.status === "Придёт" && x.plusOne === "Да").length,
+    declined: real.filter(x => x.status === "Не придёт").length,
+    bySide: SIDES.map(s => ({ s, n: coming.filter(x => x.side === s).length + coming.filter(x => x.side === s && x.plusOne === "Да").length }))
+  };
+}
+function venueCost(v, d) { const amt = Number(v.amount) || 0; return v.priceType === "За гостя" ? amt * guestStats(d).expected : amt; }
+function budgetCalc(d) {
+  const chosen = d.venues.find(v => v.chosen);
+  let venue = null;
+  if (chosen) venue = { v: chosen, cost: venueCost(chosen, d), paid: Number(chosen.paid) || 0, why: "выбранная площадка" };
+  else if (d.venues.length) { const top = d.venues.map(v => ({ v, cost: venueCost(v, d) })).sort((a, b) => b.cost - a.cost)[0]; venue = { v: top.v, cost: top.cost, paid: 0, why: "площадка не выбрана — считаем самый дорогой вариант" }; }
+  const cats = {};
+  if (venue) cats["Площадка"] = { plan: venue.cost, paid: venue.paid };
+  d.expenses.forEach(x => { const c = cats[x.cat] || (cats[x.cat] = { plan: 0, paid: 0 }); c.plan += Number(x.planned) || 0; c.paid += Number(x.paid) || 0; });
+  const plan = Object.values(cats).reduce((s, c) => s + c.plan, 0);
+  const paid = Object.values(cats).reduce((s, c) => s + c.paid, 0);
+  const limit = Number(d.budget.limit) || 0;
+  return { venue, cats, plan, paid, limit, free: limit - plan, toPay: plan - paid };
+}
+
+/* ================= GitHub ================= */
+async function gh(method, body) {
+  const { owner, repo, token } = S.cfg;
+  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${DATA_PATH}` + (method === "GET" ? `?t=${Date.now()}` : "");
+  const res = await fetch(url, {
+    method, cache: "no-store",
+    headers: { "Accept": "application/vnd.github+json", "Authorization": `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28", ...(body ? { "Content-Type": "application/json" } : {}) },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  return res;
+}
+function ghError(res) {
+  if (res.status === 401) return "Ключ доступа не подходит или истёк. Проверьте его в настройках.";
+  if (res.status === 403) return "У ключа нет права записи в репозиторий данных (Contents: Read and write).";
+  if (res.status === 404) return "Репозиторий не найден. Проверьте имя владельца и репозитория в настройках.";
+  return "GitHub ответил ошибкой " + res.status + ". Попробуйте ещё раз.";
+}
+async function ghLoad() {
+  const res = await gh("GET");
+  if (res.status === 404) {
+    // Файла ещё нет — проверим, что сам репозиторий доступен, и создадим данные.
+    const r2 = await fetch(`https://api.github.com/repos/${encodeURIComponent(S.cfg.owner)}/${encodeURIComponent(S.cfg.repo)}`, { headers: { "Authorization": `Bearer ${S.cfg.token}`, "Accept": "application/vnd.github+json" }, cache: "no-store" });
+    if (!r2.ok) throw new Error(ghError(r2));
+    return { data: null, sha: null };
+  }
+  if (!res.ok) throw new Error(ghError(res));
+  const j = await res.json();
+  return { data: JSON.parse(b64decode(j.content)), sha: j.sha };
+}
+async function ghSave(data, sha, message) {
+  const res = await gh("PUT", { message, content: b64encode(JSON.stringify(data, null, 1)), ...(sha ? { sha } : {}) });
+  if (res.status === 409 || res.status === 422) return { conflict: true };
+  if (!res.ok) throw new Error(ghError(res));
+  const j = await res.json();
+  return { sha: j.content.sha };
+}
+
+/* ================= Загрузка и сохранение ================= */
+function setStatus(st, err = "") { S.status = st; S.error = err; renderSync(); }
+async function load(quiet) {
+  if (S.mode === "demo") {
+    S.data = LS.get("wedding.demo", null) || seed();
+    LS.set("wedding.demo", S.data); renderAll(); return;
+  }
+  if (!quiet) setStatus("busy");
+  try {
+    let { data, sha } = await ghLoad();
+    if (!data) {
+      data = seed(); data.log.unshift({ ts: new Date().toISOString(), who: S.who || "Приложение", text: "Подключён GitHub, создан файл данных" });
+      const r = await ghSave(data, null, "Создан файл данных свадьбы");
+      if (r.conflict) return load(quiet);
+      sha = r.sha;
+    }
+    S.data = data; S.sha = sha; S.lastSync = new Date(); LS.set("wedding.cache", data);
+    setStatus("ok"); renderAll();
+  } catch (e) {
+    S.data = S.data || LS.get("wedding.cache", null) || seed();
+    setStatus("err", e.message || "Нет связи с GitHub"); renderAll();
+  }
+}
+/* Любое изменение = функция над данными + запись в журнал.
+   Перед сохранением берём свежую версию с GitHub, чтобы не затереть чужие правки. */
+async function mutate(text, fn) {
+  if (!S.who) { askWho(() => mutate(text, fn)); return false; }
+  const stamp = d => {
+    fn(d);
+    d.meta.rev = (d.meta.rev || 0) + 1; d.meta.updated = new Date().toISOString(); d.meta.appVersion = APP_VERSION;
+    d.log.unshift({ ts: d.meta.updated, who: S.who, text, rev: d.meta.rev });
+    if (d.log.length > 1000) d.log.length = 1000;
+  };
+  if (S.mode === "demo") { stamp(S.data); LS.set("wedding.demo", S.data); renderAll(); toast("Сохранено на этом устройстве"); return true; }
+  setStatus("busy");
+  for (let i = 0; i < 4; i++) {
+    try {
+      const fresh = await ghLoad();
+      const d = fresh.data || seed();
+      stamp(d);
+      const r = await ghSave(d, fresh.sha, `${S.who}: ${text}`);
+      if (r.conflict) continue;
+      S.data = d; S.sha = r.sha; S.lastSync = new Date(); LS.set("wedding.cache", d);
+      setStatus("ok"); renderAll(); toast("Сохранено"); return true;
+    } catch (e) { setStatus("err", e.message || "Нет связи с GitHub"); toast("Не сохранилось: " + (e.message || "нет связи")); return false; }
+  }
+  setStatus("err", "Кто-то одновременно сохранял изменения. Обновите и попробуйте ещё раз.");
+  return false;
+}
+
+/* ================= Рендер: шапка, баннер, подвал ================= */
+function renderSync() {
+  const el = $("#syncbar"); if (!el) return;
+  let dot = "", txt = "";
+  if (S.mode === "demo") { dot = "demo"; txt = "Демо-режим: данные хранятся только на этом устройстве"; }
+  else if (S.status === "busy") { dot = "busy"; txt = "Синхронизация…"; }
+  else if (S.status === "err") { dot = "err"; txt = S.error; }
+  else { txt = "Синхронизировано" + (S.lastSync ? " в " + S.lastSync.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : ""); }
+  el.innerHTML = `<span><span class="dot ${dot}"></span> ${esc(txt)}</span>
+    ${S.mode === "github" ? `<button class="linkbtn" data-act="refresh">Обновить</button>` : ""}
+    <span class="spacer"></span>
+    ${S.who ? `<span>Вы: <b>${esc(S.who)}</b></span>` : ""}
+    <button class="linkbtn" data-act="settings">Настройки</button>`;
+}
+function renderBanner() {
+  const el = $("#banner");
+  el.innerHTML = S.mode === "demo" ? `<div class="banner">Сейчас данные хранятся только на этом устройстве. Чтобы родители видели и правили один и тот же список, подключите GitHub в <button class="linkbtn" data-act="settings">настройках</button>.</div>` : "";
+}
+function renderFooter() {
+  const d = S.data; const last = d.log[0];
+  $("#footer").innerHTML = `Версия приложения <b>${APP_VERSION}</b> · ревизия данных <b class="num">${d.meta.rev}</b>` +
+    (last ? ` · последнее изменение: ${esc(last.who)}, ${fmtDT(last.ts)}` : "");
+}
+
+/* ================= Обзор ================= */
+function renderHome() {
+  const d = S.data, gs = guestStats(d), b = budgetCalc(d);
+  const days = Math.max(0, Math.ceil((WEDDING_DATE - new Date()) / 864e5));
+  const over = b.plan > b.limit;
+  const pct = v => Math.min(100, b.limit ? v / b.limit * 100 : 0);
+  const cats = Object.entries(b.cats).sort((a, c) => c[1].plan - a[1].plan);
+  const maxCat = Math.max(1, ...cats.map(c => c[1].plan));
+  $("#tab-home").innerHTML = `
+  <div class="card hero">
+    <div><div class="days num">${days}</div><div class="muted small">${plural(days, "день", "дня", "дней")} до свадьбы</div></div>
+    <div class="kpis">
+      <div class="kpi"><b class="num">${gs.expected}</b><span>гостей ждём</span></div>
+      <div class="kpi"><b class="num">${gs.max}</b><span>максимум</span></div>
+      <div class="kpi"><b class="num">${rub(b.plan)}</b><span>смета</span></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="row"><h2>Смета</h2><span class="spacer"></span><button class="btn ghost" data-act="edit-budget">Лимит</button></div>
+      <div class="row num"><span>Лимит</span><span class="spacer"></span><b>${rub(b.limit)}</b></div>
+      <div class="meter ${over ? "over" : ""}" role="img" aria-label="План ${rub(b.plan)} из ${rub(b.limit)}, оплачено ${rub(b.paid)}">
+        <i class="plan" style="width:${pct(b.plan)}%"></i><i style="width:${pct(b.paid)}%"></i>
+      </div>
+      <div class="row small num"><span class="muted">Оплачено ${rub(b.paid)}</span><span class="spacer"></span><span class="muted">План ${rub(b.plan)}</span></div>
+      <p class="num" style="margin:10px 0 0">${over ? `<b style="color:var(--bad)">Перерасход ${rub(b.plan - b.limit)}</b>` : `Свободно в бюджете: <b style="color:var(--good)">${rub(b.free)}</b>`}<br>
+      <span class="muted small">Осталось оплатить ${rub(b.toPay)}. Бюджет ${rub(d.budget.min)} – ${rub(d.budget.max)}.</span></p>
+      ${b.venue ? `<p class="small muted" style="margin:8px 0 0">Площадка в смете: ${esc(b.venue.v.name)} (${b.venue.why}).</p>` : ""}
+      <div class="cats">${cats.map(([k, c]) => `
+        <div class="cat"><div class="top num"><span>${esc(k)}</span><span>${rub(c.plan)}${c.paid ? ` <span class="muted small">· оплачено ${rub(c.paid)}</span>` : ""}</span></div>
+        <div class="meter" aria-hidden="true"><i class="plan" style="width:${c.plan / maxCat * 100}%"></i><i style="width:${c.paid / maxCat * 100}%"></i></div></div>`).join("")}
+      </div>
+    </div>
+    <div class="card">
+      <h2>Гости</h2>
+      <div class="kpis">
+        <div class="kpi"><b class="num">${gs.total}</b><span>в списке</span></div>
+        <div class="kpi"><b class="num">${gs.confirmed}</b><span>подтвердили</span></div>
+        <div class="kpi"><b class="num">${gs.declined}</b><span>не придут</span></div>
+      </div>
+      <p class="small" style="margin:12px 0 0">${gs.bySide.map(x => `Со стороны ${x.s === "Сева" ? "Севы" : "Юли"}: <b class="num">${x.n}</b>`).join(" · ")}</p>
+      <p class="small muted" style="margin:4px 0 0">Под вопросом: ${gs.maybe} ${plural(gs.maybe, "гость", "гостя", "гостей")}, возможных «+1»: ${gs.plusMaybe}.</p>
+      <h2 style="margin-top:20px">Последние изменения</h2>
+      <div class="log">${d.log.slice(0, 5).map(logRow).join("") || `<div class="empty">Пока изменений нет</div>`}</div>
+      <button class="btn ghost" data-tab="log" style="margin-top:10px">Весь журнал</button>
+    </div>
+  </div>`;
+}
+function logRow(e) { return `<div class="e"><time>${fmtDT(e.ts)}</time><div><span class="who">${esc(e.who)}</span> ${esc(e.text)}${e.rev ? ` <span class="muted small">· рев. ${e.rev}</span>` : ""}</div></div>`; }
+
+/* ================= Гости ================= */
+function gPill(s) { const m = { "Придёт": "ok", "Не придёт": "no", "Под вопросом": "q", "Приглашение отправлено": "sent" }; return `<span class="pill ${m[s] || "n"}">${esc(s)}</span>`; }
+function renderGuests() {
+  const d = S.data, f = S.gFilter, gs = guestStats(d);
+  const q = f.q.trim().toLowerCase();
+  const list = d.guests.filter(x => (f.side === "all" || x.side === f.side) && (f.status === "all" || x.status === f.status) && (!q || (x.name + " " + x.note).toLowerCase().includes(q)));
+  const groups = GROUPS.concat([...new Set(d.guests.map(x => x.group))].filter(x => !GROUPS.includes(x)));
+  const chip = (k, v, label) => `<button class="chip" data-gf="${k}" data-v="${esc(v)}" aria-pressed="${f[k] === v}">${esc(label)}</button>`;
+  $("#tab-guests").innerHTML = `
+  <div class="card">
+    <div class="row"><h2>Гости</h2><span class="spacer"></span><button class="btn terra" data-act="add-guest">+ Гость</button></div>
+    <p class="small muted" style="margin:0 0 12px">Ждём ${gs.expected}, максимум ${gs.max}. В списке ${gs.total}.</p>
+    <div class="toolbar"><input type="search" id="gq" placeholder="Поиск по имени" value="${esc(f.q)}" aria-label="Поиск гостя"></div>
+    <div class="chips" style="margin-top:10px">${chip("side", "all", "Все")}${SIDES.map(s => chip("side", s, s === "Сева" ? "Сторона Севы" : "Сторона Юли")).join("")}</div>
+    <div class="chips" style="margin-top:6px">${chip("status", "all", "Любой статус")}${G_STATUS.map(s => chip("status", s, s)).join("")}</div>
+    <div class="list" style="margin-top:6px">
+      ${groups.map(gr => { const items = list.filter(x => x.group === gr); if (!items.length) return ""; return `<div class="group-h"><span>${esc(gr)}</span><span class="num small muted">${items.length}</span></div>` + items.map(x => `
+        <button class="item" data-edit-guest="${x.id}">
+          <span class="t">${esc(x.name)}${x.plusOne !== "Нет" ? ` <span class="muted small">+1${x.plusOne === "Может быть" ? "?" : ""}</span>` : ""}</span>
+          <span class="r">${gPill(x.status)}<span class="small muted">${esc(x.side)}</span></span>
+          <span class="d">${esc(x.note)}</span>
+        </button>`).join(""); }).join("") || `<div class="empty">Никого не нашли. Измените фильтр или добавьте гостя.</div>`}
+    </div>
+  </div>`;
+}
+
+/* ================= Площадки ================= */
+function renderVenues() {
+  const d = S.data;
+  $("#tab-venues").innerHTML = `
+  <div class="card">
+    <div class="row"><h2>Площадки</h2><span class="spacer"></span><button class="btn terra" data-act="add-venue">+ Площадка</button></div>
+    <p class="small muted" style="margin:0 0 6px">Выбранная площадка идёт в смету. Пока ничего не выбрано, считаем самый дорогой вариант.</p>
+    <div class="list">${d.venues.map(v => `
+      <button class="item" data-edit-venue="${v.id}">
+        <span class="t">${esc(v.name)}${v.city ? ` <span class="muted small">· ${esc(v.city)}</span>` : ""}</span>
+        <span class="r"><b class="num">${rub(venueCost(v, d))}</b>${v.chosen ? `<span class="pill chosen">Выбрана</span>` : ""}</span>
+        <span class="d">${v.priceType === "За гостя" ? `${rub(v.amount)} × ${guestStats(d).expected} гостей. ` : ""}${v.paid ? `Внесено ${rub(v.paid)}. ` : ""}${esc(v.note)}${v.contact ? ` · ${esc(v.contact)}` : ""}</span>
+      </button>`).join("") || `<div class="empty">Добавьте первую площадку</div>`}
+    </div>
+  </div>`;
+}
+
+/* ================= Траты ================= */
+function ePill(s) { const m = { "Оплачено": "ok", "Оплачено частично": "q", "Забронировано": "sent" }; return `<span class="pill ${m[s] || "n"}">${esc(s)}</span>`; }
+function renderMoney() {
+  const d = S.data, b = budgetCalc(d);
+  const cats = [...new Set(E_CATS.concat(d.expenses.map(x => x.cat)))].filter(c => d.expenses.some(x => x.cat === c));
+  $("#tab-money").innerHTML = `
+  <div class="card">
+    <div class="row"><h2>Траты</h2><span class="spacer"></span><button class="btn terra" data-act="add-expense">+ Трата</button></div>
+    <div class="kpis" style="margin:4px 0 8px">
+      <div class="kpi"><b class="num">${rub(b.plan)}</b><span>смета</span></div>
+      <div class="kpi"><b class="num">${rub(b.paid)}</b><span>оплачено</span></div>
+      <div class="kpi"><b class="num" style="color:${b.free < 0 ? "var(--bad)" : "var(--good)"}">${rub(b.free)}</b><span>${b.free < 0 ? "перерасход" : "свободно"}</span></div>
+    </div>
+    ${b.venue ? `<div class="group-h"><span>Площадка</span><span class="num small muted">${rub(b.venue.cost)}</span></div>
+      <button class="item" data-tab="venues"><span class="t">${esc(b.venue.v.name)}</span><span class="r"><b class="num">${rub(b.venue.cost)}</b></span><span class="d">${esc(b.venue.why)} · меняется во вкладке «Площадки»</span></button>` : ""}
+    ${cats.map(c => { const items = d.expenses.filter(x => x.cat === c); const sum = items.reduce((s, x) => s + (Number(x.planned) || 0), 0); return `
+      <div class="group-h"><span>${esc(c)}</span><span class="num small muted">${rub(sum)}</span></div>` + items.map(x => `
+      <button class="item" data-edit-expense="${x.id}">
+        <span class="t">${esc(x.title || x.cat)}</span>
+        <span class="r"><b class="num">${rub(x.planned)}</b>${ePill(x.status)}</span>
+        <span class="d">${x.paid ? `Оплачено ${rub(x.paid)}. ` : ""}${x.vendor ? esc(x.vendor) + ". " : ""}${esc(x.note)}</span>
+      </button>`).join(""); }).join("") || `<div class="empty">Трат пока нет</div>`}
+  </div>`;
+}
+
+/* ================= Журнал ================= */
+function renderLog() {
+  const d = S.data;
+  $("#tab-log").innerHTML = `
+  <div class="card">
+    <h2>Журнал изменений</h2>
+    <p class="small muted" style="margin:0 0 8px">Кто и что менял. Сейчас ревизия данных <b class="num">${d.meta.rev}</b>, изменено ${fmtDT(d.meta.updated)}.</p>
+    <div class="log">${d.log.map(logRow).join("")}</div>
+  </div>
+  <div class="card">
+    <h2>Версии приложения</h2>
+    <div class="log">${APP_CHANGES.map(c => `<div class="e"><time>${c.d}</time><div><span class="who">${c.v}</span> ${esc(c.t)}</div></div>`).join("")}</div>
+  </div>`;
+}
+
+/* ================= Настройки ================= */
+function renderSettings() {
+  const c = S.cfg || { owner: "", repo: "", token: "" };
+  $("#tab-settings").innerHTML = `
+  <div class="card">
+    <h2>Настройки</h2>
+    <form id="cfgForm" class="dialogless" style="display:flex;flex-direction:column;gap:12px">
+      <div class="field"><label for="c-who">Как вас подписывать в журнале</label><input id="c-who" value="${esc(S.who)}" placeholder="Например: Мама Юли"></div>
+      <div class="fields2">
+        <div class="field"><label for="c-owner">Владелец на GitHub (логин)</label><input id="c-owner" value="${esc(c.owner)}" placeholder="yulia" autocomplete="off"></div>
+        <div class="field"><label for="c-repo">Репозиторий с данными</label><input id="c-repo" value="${esc(c.repo)}" placeholder="wedding-data" autocomplete="off"></div>
+      </div>
+      <div class="field"><label for="c-token">Ключ доступа (fine-grained token)</label><input id="c-token" type="password" value="${esc(c.token)}" placeholder="github_pat_…" autocomplete="off"></div>
+      <div class="actions"><button class="btn" type="submit">Сохранить и подключить</button>
+      ${S.cfg ? `<button class="btn ghost" type="button" data-act="copy-link">Скопировать ссылку для родителей</button><button class="btn danger" type="button" data-act="disconnect">Отключить на этом устройстве</button>` : ""}</div>
+      <p class="small muted" style="margin:0">Ссылка для родителей уже содержит ключ: им достаточно открыть её один раз. Отправляйте её только родным.</p>
+      <div id="linkOut"></div>
+    </form>
+  </div>
+  <div class="card">
+    <h2>Копия данных</h2>
+    <p class="small muted" style="margin:0 0 10px">Все версии данных и так хранятся в истории репозитория на GitHub. Здесь можно скачать текущую копию файлом.</p>
+    <div class="actions"><button class="btn ghost" data-act="export">Скачать data.json</button>
+    ${S.mode === "demo" ? `<button class="btn danger" data-act="reset-demo">Сбросить демо-данные</button>` : ""}</div>
+  </div>`;
+}
+
+/* ================= Диалог редактирования ================= */
+function field(f, val) {
+  const id = "f-" + f.k;
+  let input;
+  if (f.type === "select") input = `<select id="${id}" name="${f.k}">${f.options.map(o => `<option ${o === val ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
+  else if (f.type === "textarea") input = `<textarea id="${id}" name="${f.k}">${esc(val)}</textarea>`;
+  else if (f.type === "check") input = `<label style="display:flex;gap:8px;align-items:center;color:var(--ink);font-size:16px"><input type="checkbox" id="${id}" name="${f.k}" style="width:auto;min-height:0" ${val ? "checked" : ""}> ${esc(f.text)}</label>`;
+  else input = `<input id="${id}" name="${f.k}" ${f.type === "number" ? `type="number" inputmode="numeric" min="0" step="1"` : `type="text"`} ${f.list ? `list="${id}-l"` : ""} value="${esc(val ?? "")}" ${f.req ? "required" : ""}>${f.list ? `<datalist id="${id}-l">${f.list.map(o => `<option value="${esc(o)}">`).join("")}</datalist>` : ""}`;
+  return `<div class="field">${f.type === "check" ? "" : `<label for="${id}">${esc(f.label)}</label>`}${input}</div>`;
+}
+function openForm({ title, fields, value, onSave, onDelete, deleteLabel }) {
+  const dlg = $("#dlg"), form = $("#dlgForm");
+  const pairs = []; let buf = [];
+  fields.forEach(f => { if (f.half) { buf.push(f); if (buf.length === 2) { pairs.push(buf); buf = []; } } else { if (buf.length) { pairs.push(buf); buf = []; } pairs.push([f]); } });
+  if (buf.length) pairs.push(buf);
+  form.innerHTML = `<h3>${esc(title)}</h3>` + pairs.map(p => p.length === 2 ? `<div class="fields2">${p.map(f => field(f, value[f.k])).join("")}</div>` : field(p[0], value[p[0].k])).join("") +
+    `<div class="err" id="formErr"></div>
+     <div class="actions"><button class="btn" value="save" type="submit">Сохранить</button><button class="btn ghost" type="button" data-close>Отмена</button><span class="spacer"></span>
+     ${onDelete ? `<button class="btn danger" type="button" data-del>${esc(deleteLabel || "Удалить")}</button>` : ""}</div>`;
+  form.onsubmit = async ev => {
+    ev.preventDefault();
+    const out = {};
+    fields.forEach(f => { const el = form.elements[f.k]; out[f.k] = f.type === "check" ? el.checked : f.type === "number" ? Math.max(0, Math.round(Number(el.value) || 0)) : el.value.trim(); });
+    const bad = fields.find(f => f.req && !out[f.k]);
+    if (bad) { $("#formErr").textContent = `Заполните поле «${bad.label}».`; return; }
+    form.querySelector("[type=submit]").disabled = true;
+    const ok = await onSave(out);
+    if (ok !== false) dlg.close(); else form.querySelector("[type=submit]").disabled = false;
+  };
+  form.querySelector("[data-close]").onclick = () => dlg.close();
+  const del = form.querySelector("[data-del]");
+  if (del) del.onclick = async () => {
+    if (!del.classList.contains("armed")) { del.classList.add("armed"); del.textContent = "Нажмите ещё раз, чтобы удалить"; return; }
+    del.disabled = true; const ok = await onDelete(); if (ok !== false) dlg.close();
+  };
+  dlg.showModal();
+  const first = form.querySelector("input:not([type=checkbox]),select,textarea"); if (first && matchMedia("(pointer:fine)").matches) first.focus();
+}
+
+/* ---- Гость ---- */
+const guestFields = () => [
+  { k: "name", label: "Имя", req: true },
+  { k: "side", label: "Сторона", type: "select", options: SIDES, half: 1 },
+  { k: "group", label: "Группа", list: GROUPS, half: 1 },
+  { k: "status", label: "Статус", type: "select", options: G_STATUS, half: 1 },
+  { k: "plusOne", label: "С парой (+1)", type: "select", options: PLUS, half: 1 },
+  { k: "note", label: "Заметка", type: "textarea" }
+];
+function editGuest(id) {
+  const g = id ? S.data.guests.find(x => x.id === id) : { name: "", side: "Юля", group: "Друзья", status: "В списке", plusOne: "Нет", note: "" };
+  if (!g) return;
+  openForm({
+    title: id ? "Гость" : "Новый гость", fields: guestFields(), value: g,
+    onSave: v => {
+      if (!id) { const nid = newId("g"); return mutate(`добавил(а) гостя «${v.name}»`, d => { if (!d.guests.some(x => x.id === nid)) d.guests.push({ id: nid, ...v }); }); }
+      const ch = Object.keys(v).filter(k => (g[k] ?? "") !== v[k]).map(k => describeChange(k, g[k], v[k]));
+      if (!ch.length) return true;
+      return mutate(`изменил(а) гостя «${v.name}»: ${ch.join(", ")}`, d => { const x = d.guests.find(y => y.id === id); if (x) Object.assign(x, v); });
+    },
+    onDelete: id ? () => mutate(`удалил(а) гостя «${g.name}»`, d => { d.guests = d.guests.filter(x => x.id !== id); }) : null
+  });
+}
+const LABELS = { name: "имя", side: "сторона", group: "группа", status: "статус", plusOne: "+1", note: "заметка", city: "город", priceType: "тип цены", amount: "цена", paid: "оплачено", contact: "контакт", chosen: "выбор", cat: "категория", title: "название", planned: "план", vendor: "подрядчик" };
+function describeChange(k, a, b) {
+  if (k === "note") return "заметка";
+  if (typeof b === "number") return `${LABELS[k] || k} ${rub(a)} → ${rub(b)}`;
+  if (typeof b === "boolean") return b ? "выбрана" : "снят выбор";
+  return `${LABELS[k] || k}: ${a || "—"} → ${b || "—"}`;
+}
+
+/* ---- Площадка ---- */
+function editVenue(id) {
+  const v0 = id ? S.data.venues.find(x => x.id === id) : { name: "", city: "Ульяновск", priceType: "Сумма за всё", amount: 0, paid: 0, contact: "", note: "", chosen: false };
+  if (!v0) return;
+  openForm({
+    title: id ? "Площадка" : "Новая площадка",
+    fields: [
+      { k: "name", label: "Название", req: true },
+      { k: "city", label: "Город", half: 1 },
+      { k: "contact", label: "Контакт (менеджер, телефон)", half: 1 },
+      { k: "priceType", label: "Как считается цена", type: "select", options: V_PRICE, half: 1 },
+      { k: "amount", label: "Цена, ₽", type: "number", half: 1 },
+      { k: "paid", label: "Уже внесено, ₽", type: "number" },
+      { k: "note", label: "Заметка", type: "textarea" },
+      { k: "chosen", type: "check", text: "Это наша площадка — учитывать в смете" }
+    ],
+    value: v0,
+    onSave: v => {
+      const apply = (d, vid) => { if (v.chosen) d.venues.forEach(x => x.chosen = false); const x = d.venues.find(y => y.id === vid); if (x) Object.assign(x, v); else d.venues.push({ id: vid, ...v }); };
+      if (!id) { const nid = newId("v"); return mutate(`добавил(а) площадку «${v.name}»${v.chosen ? " и выбрал(а) её" : ""}`, d => apply(d, nid)); }
+      const ch = Object.keys(v).filter(k => (v0[k] ?? "") !== v[k]).map(k => describeChange(k, v0[k], v[k]));
+      if (!ch.length) return true;
+      return mutate(`изменил(а) площадку «${v.name}»: ${ch.join(", ")}`, d => apply(d, id));
+    },
+    onDelete: id ? () => mutate(`удалил(а) площадку «${v0.name}»`, d => { d.venues = d.venues.filter(x => x.id !== id); }) : null
+  });
+}
+
+/* ---- Трата ---- */
+function editExpense(id) {
+  const e0 = id ? S.data.expenses.find(x => x.id === id) : { cat: "Фотограф", title: "", planned: 0, paid: 0, status: "Выбираем", vendor: "", note: "" };
+  if (!e0) return;
+  openForm({
+    title: id ? "Трата" : "Новая трата",
+    fields: [
+      { k: "cat", label: "Категория", list: E_CATS.filter(c => c !== "Площадка"), req: true, half: 1 },
+      { k: "status", label: "Статус", type: "select", options: E_STATUS, half: 1 },
+      { k: "title", label: "Что именно" },
+      { k: "planned", label: "Стоимость по плану, ₽", type: "number", half: 1 },
+      { k: "paid", label: "Уже оплачено, ₽", type: "number", half: 1 },
+      { k: "vendor", label: "Подрядчик (имя, контакт)" },
+      { k: "note", label: "Заметка", type: "textarea" }
+    ],
+    value: e0,
+    onSave: v => {
+      if (!id) { const nid = newId("e"); return mutate(`добавил(а) трату «${v.title || v.cat}» — ${rub(v.planned)}`, d => { if (!d.expenses.some(x => x.id === nid)) d.expenses.push({ id: nid, ...v }); }); }
+      const ch = Object.keys(v).filter(k => (e0[k] ?? "") !== v[k]).map(k => describeChange(k, e0[k], v[k]));
+      if (!ch.length) return true;
+      return mutate(`изменил(а) трату «${v.title || v.cat}»: ${ch.join(", ")}`, d => { const x = d.expenses.find(y => y.id === id); if (x) Object.assign(x, v); });
+    },
+    onDelete: id ? () => mutate(`удалил(а) трату «${e0.title || e0.cat}»`, d => { d.expenses = d.expenses.filter(x => x.id !== id); }) : null
+  });
+}
+
+/* ---- Бюджет ---- */
+function editBudget() {
+  const b = S.data.budget;
+  openForm({
+    title: "Бюджет",
+    fields: [
+      { k: "limit", label: "Лимит, с которым сравниваем смету, ₽", type: "number" },
+      { k: "min", label: "Бюджет от, ₽", type: "number", half: 1 },
+      { k: "max", label: "Бюджет до, ₽", type: "number", half: 1 }
+    ],
+    value: b,
+    onSave: v => { const ch = Object.keys(v).filter(k => b[k] !== v[k]).map(k => `${{ limit: "лимит", min: "от", max: "до" }[k]} ${rub(b[k])} → ${rub(v[k])}`); if (!ch.length) return true; return mutate(`изменил(а) бюджет: ${ch.join(", ")}`, d => { Object.assign(d.budget, v); }); }
+  });
+}
+
+/* ---- Кто вы ---- */
+function askWho(then) {
+  openForm({
+    title: "Кто вы?",
+    fields: [{ k: "who", label: "Имя появится в журнале изменений", req: true, list: ["Юля", "Сева", "Мама Юли", "Папа Юли", "Мама Севы", "Аня"] }],
+    value: { who: S.who },
+    onSave: v => { S.who = v.who; LS.set("wedding.who", S.who); renderSync(); if (then) setTimeout(then, 50); return true; }
+  });
+}
+
+/* ================= Навигация и события ================= */
+function show(tab) {
+  S.tab = tab;
+  ["home", "guests", "venues", "money", "log", "settings"].forEach(t => $("#tab-" + t).hidden = t !== tab);
+  document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === tab ? "page" : "false"));
+  LS.set("wedding.tab", tab);
+  window.scrollTo({ top: 0 });
+}
+function renderAll() {
+  if (!S.data) return;
+  renderSync(); renderBanner(); renderHome(); renderGuests(); renderVenues(); renderMoney(); renderLog(); renderSettings(); renderFooter();
+}
+document.addEventListener("click", async ev => {
+  const t = ev.target.closest("[data-tab],[data-act],[data-edit-guest],[data-edit-venue],[data-edit-expense],[data-gf]");
+  if (!t) return;
+  if (t.dataset.tab) return show(t.dataset.tab);
+  if (t.dataset.editGuest) return editGuest(t.dataset.editGuest);
+  if (t.dataset.editVenue) return editVenue(t.dataset.editVenue);
+  if (t.dataset.editExpense) return editExpense(t.dataset.editExpense);
+  if (t.dataset.gf) { S.gFilter[t.dataset.gf] = t.dataset.v; renderGuests(); return; }
+  const a = t.dataset.act;
+  if (a === "add-guest") editGuest(null);
+  else if (a === "add-venue") editVenue(null);
+  else if (a === "add-expense") editExpense(null);
+  else if (a === "edit-budget") editBudget();
+  else if (a === "settings") show("settings");
+  else if (a === "refresh") load();
+  else if (a === "copy-link") copyLink();
+  else if (a === "export") exportJson();
+  else if (a === "disconnect") { LS.del("wedding.cfg"); S.cfg = null; S.mode = "demo"; load(); toast("GitHub отключён на этом устройстве"); }
+  else if (a === "reset-demo") { LS.del("wedding.demo"); load(); toast("Демо-данные сброшены"); }
+});
+document.addEventListener("input", ev => {
+  if (ev.target.id === "gq") { S.gFilter.q = ev.target.value; const pos = ev.target.selectionStart; renderGuests(); const el = $("#gq"); el.focus(); try { el.setSelectionRange(pos, pos); } catch {} }
+});
+document.addEventListener("submit", async ev => {
+  if (ev.target.id !== "cfgForm") return;
+  ev.preventDefault();
+  const who = $("#c-who").value.trim(), owner = $("#c-owner").value.trim(), repo = $("#c-repo").value.trim(), token = $("#c-token").value.trim();
+  if (who) { S.who = who; LS.set("wedding.who", who); }
+  if (owner && repo && token) { S.cfg = { owner, repo, token }; LS.set("wedding.cfg", S.cfg); S.mode = "github"; await load(); if (S.status === "ok") { toast("GitHub подключён"); show("home"); } }
+  else { renderSync(); toast(who ? "Имя сохранено" : "Заполните логин, репозиторий и ключ"); }
+});
+function parentLink() {
+  const payload = b64encode(JSON.stringify(S.cfg)).replace(/=+$/, "");
+  return location.origin + location.pathname + "#connect=" + payload;
+}
+async function copyLink() {
+  const link = parentLink();
+  const out = $("#linkOut");
+  out.innerHTML = `<div class="field"><label for="plink">Ссылка</label><input id="plink" readonly value="${esc(link)}"></div>`;
+  try { await navigator.clipboard.writeText(link); toast("Ссылка скопирована"); } catch { const i = $("#plink"); i.focus(); i.select(); toast("Выделите и скопируйте ссылку"); }
+}
+function exportJson() {
+  const blob = new Blob([JSON.stringify(S.data, null, 2)], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `wedding-data-rev${S.data.meta.rev}.json`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+/* ================= Старт ================= */
+(function init() {
+  // Ссылка для родителей: #connect=<данные подключения>
+  const m = location.hash.match(/connect=([A-Za-z0-9+/_-]+)/);
+  if (m) {
+    try { const cfg = JSON.parse(b64decode(m[1].replace(/-/g, "+").replace(/_/g, "/"))); if (cfg.owner && cfg.repo && cfg.token) LS.set("wedding.cfg", cfg); } catch {}
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+  S.cfg = LS.get("wedding.cfg", null);
+  S.mode = S.cfg ? "github" : "demo";
+  S.who = LS.get("wedding.who", "");
+  S.data = S.mode === "github" ? LS.get("wedding.cache", null) : null;
+  if (S.data) renderAll();
+  show(LS.get("wedding.tab", "home"));
+  load().then(() => { if (!S.who) askWho(); });
+  // Подтягиваем чужие правки: при возврате в приложение и раз в минуту
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && S.mode === "github") load(true); });
+  setInterval(() => { if (!document.hidden && S.mode === "github" && !$("#dlg").open) load(true); }, 60000);
+  setInterval(() => { if (S.tab === "home" && S.data && !$("#dlg").open) renderHome(); }, 3600000);
+})();
+</script>
+</body>
+</html>
