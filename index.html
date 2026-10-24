@@ -3,30 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#EFE6D6">
+<meta name="theme-color" content="#FBF8F1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Наша свадьба">
 <title>Свадьба Севы и Юлии</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prata&family=Manrope:wght@400;500;600;700&display=swap">
 <style>
 /* Тоскана: тёплый камень, оливка, терракота; голубой — из палитры свадьбы, для ссылок и выбранного */
 :root{
-  --stone:#EFE6D6;
-  --card:#FAF6EE;
-  --ink:#3A2B22;
-  --muted:#7C6B5C;
-  --olive:#5E6B3C;
-  --olive-soft:#E3E5D2;
-  --terra:#B05E38;
-  --terra-soft:#F2DED2;
-  --sky:#4F7896;
-  --line:rgba(58,43,34,.14);
-  --good:#5E6B3C;
-  --warn:#B07A1E;
-  --bad:#A8432F;
-  --f-display:"Cormorant Garamond",Georgia,"Times New Roman",serif;
-  --f-body:"Alegreya Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --stone:#FBF8F1;          /* айвори */
+  --card:#FFFEFB;
+  --ink:#2F2B27;
+  --muted:#8A8178;
+  --olive:#6B7A4B;
+  --olive-soft:#EEF0E4;
+  --terra:#6B7A4B;          /* основной акцент — оливковый */
+  --terra-soft:#EEF0E4;
+  --sky:#6E8CA6;
+  --line:rgba(47,43,39,.10);
+  --good:#6B7A4B;
+  --warn:#B48A3C;
+  --bad:#B0533F;
+  --f-display:"Prata",Georgia,"Times New Roman",serif;
+  --f-body:"Manrope","Segoe UI",Roboto,Arial,sans-serif;
   --r:14px;
   color-scheme:light;
 }
@@ -34,13 +34,12 @@
 html,body{margin:0}
 body{
   background-color:var(--stone);
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.45;
+  color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;
   padding-bottom:calc(84px + env(safe-area-inset-bottom,0px));
 }
 .wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 button,input,select,textarea{font:inherit;color:inherit}
-h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0;line-height:1.1;text-wrap:balance}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;line-height:1.1;text-wrap:balance}
 .num{font-variant-numeric:tabular-nums}
 .muted{color:var(--muted)}
 .small{font-size:14px}
@@ -58,7 +57,7 @@ header.top{padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:
 .linkbtn{background:none;border:0;padding:0;color:var(--sky);text-decoration:underline;cursor:pointer;font-size:14px}
 
 /* Навигация */
-nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(250,246,238,.96);backdrop-filter:blur(6px);border-top:1px solid var(--line);
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,254,251,.96);backdrop-filter:blur(6px);border-top:1px solid var(--line);
   padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));display:flex;justify-content:center}
 nav.tabs .in{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;width:100%;max-width:640px}
 nav.tabs button{background:none;border:0;border-radius:10px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12.5px;color:var(--muted);cursor:pointer}
@@ -72,14 +71,14 @@ nav.tabs button[aria-current="page"]{color:var(--terra);background:var(--terra-s
 
 main{display:flex;flex-direction:column;gap:18px;padding-block:16px 24px}
 section[hidden]{display:none!important}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
-.card h2{font-size:26px;margin-bottom:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:0 1px 2px rgba(47,43,39,.04),0 6px 18px rgba(47,43,39,.04)}
+.card h2{font-size:24px;margin-bottom:10px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .spacer{flex:1}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
 @media (max-width:760px){.grid2{grid-template-columns:1fr}}
 
-.btn{border:1px solid var(--ink);background:var(--ink);color:var(--card);border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:500;display:inline-flex;align-items:center;gap:6px;min-height:40px}
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--card);border-radius:999px;padding:8px 18px;cursor:pointer;font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:6px;min-height:40px}
 .btn.ghost{background:transparent;color:var(--ink)}
 .btn.terra{background:var(--terra);border-color:var(--terra)}
 .btn.danger{background:transparent;color:var(--bad);border-color:var(--bad)}
@@ -88,10 +87,10 @@ section[hidden]{display:none!important}
 
 /* Сводка */
 .hero{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
-.days{font-family:var(--f-display);font-size:64px;line-height:.9;color:var(--terra);font-weight:700}
+.days{font-family:var(--f-display);font-size:60px;line-height:1;color:var(--olive);font-weight:400}
 .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .kpi{border-top:1px solid var(--line);padding-top:8px}
-.kpi b{display:block;font-family:var(--f-display);font-size:26px;font-weight:700}
+.kpi b{display:block;font-family:var(--f-display);font-size:24px;font-weight:400}
 .kpi span{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 @media (max-width:520px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpis .kpi:nth-child(3){grid-column:1/-1}.hero{grid-template-columns:1fr}}
 
@@ -112,7 +111,7 @@ textarea{min-height:70px;resize:vertical}
 .chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 12px;font-size:14px;cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--olive);border-color:var(--olive);color:var(--card)}
 .list{display:flex;flex-direction:column}
-.group-h{font-family:var(--f-display);font-size:20px;font-weight:600;padding:14px 2px 4px;color:var(--olive);display:flex;justify-content:space-between;align-items:baseline}
+.group-h{font-family:var(--f-display);font-size:18px;font-weight:400;padding:14px 2px 4px;color:var(--olive);display:flex;justify-content:space-between;align-items:baseline}
 .item{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-top:0;text-align:left;width:100%}
 .item:hover{background:rgba(255,255,255,.5)}
 .item .t{font-weight:500;min-width:0;overflow-wrap:anywhere}
@@ -127,14 +126,14 @@ textarea{min-height:70px;resize:vertical}
 .log{display:flex;flex-direction:column}
 .log .e{display:grid;grid-template-columns:110px 1fr;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);font-size:15px}
 .log .e time{color:var(--muted);font-size:13.5px}
-.log .who{font-weight:700;color:var(--terra)}
+.log .who{font-weight:600;color:var(--olive)}
 @media (max-width:520px){.log .e{grid-template-columns:1fr;gap:2px}}
 
 /* Диалог */
 dialog{border:0;border-radius:18px;padding:0;width:min(560px,calc(100vw - 24px));max-height:calc(100dvh - 24px);background:var(--card);color:var(--ink);box-shadow:0 20px 60px rgba(58,43,34,.3)}
 dialog::backdrop{background:rgba(58,43,34,.4)}
 dialog form{display:flex;flex-direction:column;gap:12px;padding:20px}
-dialog h3{font-size:28px}
+dialog h3{font-size:26px}
 .field{display:flex;flex-direction:column;gap:4px}
 .field label{font-size:14px;color:var(--muted)}
 .fields2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -144,7 +143,7 @@ dialog h3{font-size:28px}
 
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--card);padding:10px 16px;border-radius:12px;font-size:15px;z-index:50;max-width:calc(100vw - 32px)}
 @media (min-width:900px){.toast{bottom:24px}}
-.banner{background:var(--terra-soft);border:1px solid rgba(176,94,56,.3);border-radius:var(--r);padding:12px 14px;font-size:15px}
+.banner{background:#F7F1E3;border:1px solid rgba(180,138,60,.35);border-radius:var(--r);padding:12px 14px;font-size:15px}
 footer{font-size:13.5px;color:var(--muted);text-align:center;padding:10px 0 20px}
 code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.92em;overflow-wrap:anywhere}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -163,8 +162,8 @@ code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.
 <header class="top wrap">
   <div class="brand">
     <svg viewBox="0 0 56 40" aria-hidden="true">
-      <path d="M4 34 C18 30 32 20 52 6" fill="none" stroke="#5E6B3C" stroke-width="1.6" stroke-linecap="round"/>
-      <g fill="#5E6B3C" opacity=".85">
+      <path d="M4 34 C18 30 32 20 52 6" fill="none" stroke="#6B7A4B" stroke-width="1.6" stroke-linecap="round"/>
+      <g fill="#6B7A4B" opacity=".8">
         <ellipse cx="14" cy="27" rx="6" ry="2.2" transform="rotate(-50 14 27)"/>
         <ellipse cx="18" cy="33" rx="6" ry="2.2" transform="rotate(10 18 33)"/>
         <ellipse cx="27" cy="20" rx="6.5" ry="2.3" transform="rotate(-55 27 20)"/>
@@ -172,7 +171,7 @@ code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.
         <ellipse cx="40" cy="12" rx="6" ry="2.2" transform="rotate(-60 40 12)"/>
         <ellipse cx="45" cy="16" rx="6" ry="2.2" transform="rotate(0 45 16)"/>
       </g>
-      <circle cx="23" cy="27" r="2.6" fill="#3A2B22"/><circle cx="37" cy="19" r="2.4" fill="#3A2B22"/>
+      <circle cx="23" cy="27" r="2.6" fill="#2F2B27"/><circle cx="37" cy="19" r="2.4" fill="#2F2B27"/>
     </svg>
     <div>
       <h1>Сева и Юлия</h1>
@@ -208,8 +207,9 @@ code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.
 <script>
 "use strict";
 /* ================= Версия приложения ================= */
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.1.0";
 const APP_CHANGES = [
+  { v: "1.1.0", d: "24.10.2026", t: "Подключение к GitHub сохраняется после закрытия приложения и в иконке на экране «Домой». Новый вид: фон айвори, шрифты Prata и Manrope, оливковый акцент." },
   { v: "1.0.0", d: "24.10.2026", t: "Первая версия: гости, площадки, траты, смета, журнал изменений, синхронизация через GitHub." }
 ];
 const WEDDING_DATE = new Date("2027-08-27T15:00:00+03:00");
@@ -605,7 +605,8 @@ function renderSettings() {
       <div class="field"><label for="c-token">Ключ доступа (fine-grained token)</label><input id="c-token" type="password" value="${esc(c.token)}" placeholder="github_pat_…" autocomplete="off"></div>
       <div class="actions"><button class="btn" type="submit">Сохранить и подключить</button>
       ${S.cfg ? `<button class="btn ghost" type="button" data-act="copy-link">Скопировать ссылку для родителей</button><button class="btn danger" type="button" data-act="disconnect">Отключить на этом устройстве</button>` : ""}</div>
-      <p class="small muted" style="margin:0">Ссылка для родителей уже содержит ключ: им достаточно открыть её один раз. Отправляйте её только родным.</p>
+      ${S.cfg ? `<p class="small" style="margin:0;color:var(--good)">Подключение сохранено на этом устройстве. Оно остаётся и после закрытия приложения.</p>` : ""}
+      <p class="small muted" style="margin:0">Ссылка для родителей уже содержит ключ: им достаточно открыть её один раз. Отправляйте её только родным, и не пересылайте адрес из строки браузера посторонним: в нём тоже есть ключ.</p>
       <div id="linkOut"></div>
     </form>
   </div>
@@ -795,7 +796,7 @@ document.addEventListener("click", async ev => {
   else if (a === "refresh") load();
   else if (a === "copy-link") copyLink();
   else if (a === "export") exportJson();
-  else if (a === "disconnect") { LS.del("wedding.cfg"); S.cfg = null; S.mode = "demo"; load(); toast("GitHub отключён на этом устройстве"); }
+  else if (a === "disconnect") { forgetConnection(); S.cfg = null; S.mode = "demo"; load(); toast("GitHub отключён на этом устройстве"); }
   else if (a === "reset-demo") { LS.del("wedding.demo"); load(); toast("Демо-данные сброшены"); }
 });
 document.addEventListener("input", ev => {
@@ -806,12 +807,28 @@ document.addEventListener("submit", async ev => {
   ev.preventDefault();
   const who = $("#c-who").value.trim(), owner = $("#c-owner").value.trim(), repo = $("#c-repo").value.trim(), token = $("#c-token").value.trim();
   if (who) { S.who = who; LS.set("wedding.who", who); }
-  if (owner && repo && token) { S.cfg = { owner, repo, token }; LS.set("wedding.cfg", S.cfg); S.mode = "github"; await load(); if (S.status === "ok") { toast("GitHub подключён"); show("home"); } }
+  if (owner && repo && token) { S.cfg = { owner, repo, token }; rememberConnection(); S.mode = "github"; await load(); if (S.status === "ok") { toast("GitHub подключён"); show("home"); } }
   else { renderSync(); toast(who ? "Имя сохранено" : "Заполните логин, репозиторий и ключ"); }
 });
-function parentLink() {
-  const payload = b64encode(JSON.stringify(S.cfg)).replace(/=+$/, "");
-  return location.origin + location.pathname + "#connect=" + payload;
+function connectHash() { return "#connect=" + b64encode(JSON.stringify(S.cfg)).replace(/=+$/, ""); }
+function parentLink() { return location.origin + location.pathname + connectHash(); }
+/* Подключение хранится и в памяти браузера, и в адресе страницы.
+   Так его не теряет ни иконка «На экран Домой» (у неё своя память на iPhone),
+   ни встроенный браузер Telegram, ни очистка данных Safari. */
+function rememberConnection() {
+  if (!S.cfg) return;
+  LS.set("wedding.cfg", S.cfg);
+  try { document.cookie = "wedding_cfg=" + encodeURIComponent(JSON.stringify(S.cfg)) + ";max-age=" + 60 * 60 * 24 * 400 + ";path=" + location.pathname + ";SameSite=Lax" + (location.protocol === "https:" ? ";Secure" : ""); } catch {}
+  if (location.hash !== connectHash()) history.replaceState(null, "", location.pathname + location.search + connectHash());
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
+}
+function readCookieCfg() {
+  try { const m = document.cookie.match(/(?:^|; )wedding_cfg=([^;]*)/); return m ? JSON.parse(decodeURIComponent(m[1])) : null; } catch { return null; }
+}
+function forgetConnection() {
+  LS.del("wedding.cfg");
+  try { document.cookie = "wedding_cfg=;max-age=0;path=" + location.pathname; } catch {}
+  history.replaceState(null, "", location.pathname + location.search);
 }
 async function copyLink() {
   const link = parentLink();
@@ -831,9 +848,9 @@ function exportJson() {
   const m = location.hash.match(/connect=([A-Za-z0-9+/_-]+)/);
   if (m) {
     try { const cfg = JSON.parse(b64decode(m[1].replace(/-/g, "+").replace(/_/g, "/"))); if (cfg.owner && cfg.repo && cfg.token) LS.set("wedding.cfg", cfg); } catch {}
-    history.replaceState(null, "", location.pathname + location.search);
   }
-  S.cfg = LS.get("wedding.cfg", null);
+  S.cfg = LS.get("wedding.cfg", null) || readCookieCfg();
+  if (S.cfg) rememberConnection();
   S.mode = S.cfg ? "github" : "demo";
   S.who = LS.get("wedding.who", "");
   S.data = S.mode === "github" ? LS.get("wedding.cache", null) : null;
