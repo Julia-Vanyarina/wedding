@@ -265,8 +265,9 @@ code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.
 <script>
 "use strict";
 /* ================= Версия приложения ================= */
-const APP_VERSION = "1.14.0";
+const APP_VERSION = "1.14.1";
 const APP_CHANGES = [
+  { v: "1.14.1", d: "25.10.2026", t: "Исправлен обратный отсчёт: считаются календарные дни до 27 августа, без округления неполного дня вверх. Число обновляется при открытии приложения и после полуночи." },
   { v: "1.14.0", d: "24.10.2026", t: "Гости считаются по людям, а не по строчкам: «+1» добавляет человека, «+1?» идёт в «возможно». У записи можно указать, сколько в ней человек (например, «Люба и Вася» — 2). В заголовках групп — число людей." },
   { v: "1.13.2", d: "24.10.2026", t: "Кольца: 50 000 ₽ по плану." },
   { v: "1.13.1", d: "24.10.2026", t: "У гостя Алексей убрана подпись." },
@@ -287,6 +288,13 @@ const APP_CHANGES = [
 ];
 const WEDDING_DATE = new Date("2027-08-27T15:00:00+03:00");
 const DATA_PATH = "data.json";
+/* Календарные дни до свадьбы по дате на телефоне, без учёта часов */
+function daysLeft() {
+  const t = new Date();
+  const today = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
+  const wedding = Date.UTC(2027, 7, 27);
+  return Math.max(0, Math.round((wedding - today) / 864e5));
+}
 
 /* ================= Справочники ================= */
 const SIDES = ["Сева", "Юля"];
@@ -836,14 +844,14 @@ function renderFooter() {
 /* ================= Обзор ================= */
 function renderHome() {
   const d = S.data, gs = guestStats(d), b = budgetCalc(d);
-  const days = Math.max(0, Math.ceil((WEDDING_DATE - new Date()) / 864e5));
+  const days = daysLeft();
   const over = b.scoped.plan > b.limit;
   const pct = v => Math.min(100, b.limit ? v / b.limit * 100 : 0);
   const cats = Object.entries(b.cats).sort((a, c) => c[1].plan - a[1].plan);
   const maxCat = Math.max(1, ...cats.map(c => c[1].plan));
   $("#tab-home").innerHTML = `
   <div class="card hero">
-    <div><div class="days num">${days}</div><div class="muted small">${plural(days, "день", "дня", "дней")} до свадьбы</div></div>
+    <div>${days ? `<div class="days num">${days}</div><div class="muted small">${plural(days, "день", "дня", "дней")} до свадьбы</div>` : `<div class="days">Сегодня</div><div class="muted small">день свадьбы</div>`}</div>
     <div class="kpis">
       <div class="kpi"><b class="num">${planText(d)}</b><span>гостей ждём</span></div>
       <div class="kpi"><b class="num">${gs.total}</b><span>человек в списке</span></div>
@@ -1561,7 +1569,11 @@ function exportJson() {
   // Подтягиваем чужие правки: при возврате в приложение и раз в минуту
   document.addEventListener("visibilitychange", () => { if (!document.hidden && S.mode === "github") load(true); });
   setInterval(() => { if (!document.hidden && S.mode === "github" && !$("#dlg").open) load(true); }, 60000);
-  setInterval(() => { if (S.tab === "home" && S.data && !$("#dlg").open) renderHome(); }, 3600000);
+  // обратный отсчёт: перерисовываем при возвращении в приложение и каждую минуту проверяем, не сменился ли день
+  let lastDays = daysLeft();
+  const tickDays = () => { const n = daysLeft(); if (n !== lastDays && S.data && !$("#dlg").open) { lastDays = n; renderHome(); } };
+  setInterval(tickDays, 60000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) tickDays(); });
 })();
 </script>
 </body>
