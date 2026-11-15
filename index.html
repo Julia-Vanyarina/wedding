@@ -131,6 +131,17 @@ textarea{min-height:70px;resize:vertical}
 .ftotal{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;justify-content:space-between;margin-top:12px;padding:10px 12px;background:var(--olive-soft);border-radius:10px;font-size:15px}
 .ftotal.bottom{margin-top:14px}
 .ftotal .muted{font-size:13.5px}
+.alco{display:flex;flex-direction:column;font-size:15px}
+.alco-h,.alco-r{display:grid;grid-template-columns:1fr 64px 72px;gap:8px;padding:7px 2px;border-bottom:1px solid var(--line);align-items:baseline}
+.alco-h{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.alco-h span:not(:first-child),.alco-r > :not(:first-child){text-align:right}
+.alco-r.zero{color:var(--muted)}
+.alco-r.tot{border-bottom:0;font-weight:600}
+.drinks{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.drow{display:grid;grid-template-columns:1fr 150px;gap:6px 10px;align-items:center}
+.drow label{min-width:0;overflow-wrap:anywhere;font-size:15px}
+.drow select{min-height:36px;padding:4px 8px;font-size:14.5px}
+@media (max-width:420px){.drow{grid-template-columns:1fr 130px}}
 .payers{display:flex;flex-direction:column;gap:6px;margin-top:12px;padding:10px 12px;background:var(--olive-soft);border-radius:10px}
 .task{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;padding:10px 2px;border-bottom:1px solid var(--line)}
 .tick{width:28px;height:28px;border-radius:8px;border:1.5px solid var(--olive);background:transparent;color:var(--card);font-size:16px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px}
@@ -268,8 +279,9 @@ code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.
 <script>
 "use strict";
 /* ================= Версия приложения ================= */
-const APP_VERSION = "1.15.1";
+const APP_VERSION = "1.16.0";
 const APP_CHANGES = [
+  { v: "1.16.0", d: "15.11.2026", t: "Калькулятор алкоголя: у каждого гостя и его «+1» можно выбрать напиток, приложение считает бутылки с запасом. Внесены ведущий + DJ (Николай Кукушкин), аппаратура, пригласительные, новая оценка колец." },
   { v: "1.15.1", d: "15.11.2026", t: "Во вкладке «Гости» показано, сколько людей по выбранному фильтру — над списком и под ним." },
   { v: "1.15.0", d: "29.10.2026", t: "Иногородние гости: город и где остановятся, фильтр «Из других городов». Внесено: зал «Архангельский» выбран, аванс 100 000 ₽ оплачен; гости с работы; раздел чек-листа «Выбрать подрядчиков»; траты на рилсмейкера, координатора и сайт-приглашение." },
   { v: "1.14.1", d: "25.10.2026", t: "Исправлен обратный отсчёт: считаются календарные дни до 27 августа, без округления неполного дня вверх. Число обновляется при открытии приложения и после полуночи." },
@@ -315,10 +327,45 @@ const payerLabel = p => p === "Родители" ? "Родители (попол
 const OURS = ["Кольца", "Образ невесты", "Образ жениха", "Макияж и причёска", "Фотограф"];
 const payerOf = x => (x && x.payer) || "Родители";
 const E_STATUS = ["Выбираем", "Забронировано", "Оплачено частично", "Оплачено"];
-const E_CATS = ["Площадка", "Координатор", "Фуршет", "Десерты", "Фотограф", "Видео", "Кольца", "Декор", "Флористика", "Образ невесты", "Образ жениха", "Макияж и причёска", "Музыка", "Ведущий", "Торт", "Транспорт", "Полиграфия", "Прочее"];
+const E_CATS = ["Площадка", "Аппаратура", "Алкоголь", "Координатор", "Фуршет", "Десерты", "Фотограф", "Видео", "Кольца", "Декор", "Флористика", "Образ невесты", "Образ жениха", "Макияж и причёска", "Музыка", "Ведущий", "Торт", "Транспорт", "Полиграфия", "Прочее"];
 const V_PRICE = ["Сумма за всё", "За гостя"];
 
 /* ================= Начальные данные (из плана свадьбы) ================= */
+/* Калькулятор алкоголя: нормы на человека за банкет ~6 часов, мл; объём бутылки, мл */
+const DRINKS = [
+  { k: "Шампанское", per: 500, bottle: 750 },
+  { k: "Белое сухое вино", per: 500, bottle: 750 },
+  { k: "Полусладкое вино", per: 500, bottle: 750 },
+  { k: "Красное вино", per: 500, bottle: 750 },
+  { k: "Водка", per: 350, bottle: 500 },
+  { k: "Коньяк / виски", per: 300, bottle: 500 },
+  { k: "Кальвадос", per: 300, bottle: 700 },
+  { k: "Сидр", per: 750, bottle: 750 },
+  { k: "Не пьёт", per: 0, bottle: 0 }
+];
+const NO_DRINK = "не выбрано";
+function alcoSettings(d) {
+  const a = d.alcohol || {};
+  const norms = {};
+  DRINKS.forEach(x => { const n = (a.norms || {})[x.k] || {}; norms[x.k] = { per: Number(n.per ?? x.per) || 0, bottle: Number(n.bottle ?? x.bottle) || 0 }; });
+  return { reserve: Number(a.reserve ?? 30), norms };
+}
+function alcoCalc(d) {
+  const st = alcoSettings(d);
+  const people = {}; DRINKS.forEach(x => people[x.k] = 0); people[NO_DRINK] = 0;
+  const add = (k, n) => { const key = DRINKS.some(x => x.k === k) ? k : NO_DRINK; people[key] += n; };
+  d.guests.filter(x => x.status !== "Не придёт").forEach(x => {
+    add(x.drink, gBase(x));
+    if (x.plusOne === "Да" || x.plusOne === "Может быть") add(x.plusDrink || x.drink, 1);
+  });
+  const rows = DRINKS.filter(x => x.k !== "Не пьёт").map(x => {
+    const n = people[x.k], nm = st.norms[x.k];
+    const litres = n * nm.per / 1000;
+    const bottles = nm.bottle ? Math.ceil(n * nm.per * (1 + st.reserve / 100) / nm.bottle) : 0;
+    return { k: x.k, n, litres, bottles, bottle: nm.bottle };
+  });
+  return { st, people, rows, unset: people[NO_DRINK], none: people["Не пьёт"] };
+}
 /* Чек-лист из плана свадьбы */
 const CHECKLIST = [
   ["Уточнить у Radisson (Татьяна)", [
@@ -778,6 +825,26 @@ const MIGRATIONS = [
     addE("Координатор", "Организатор / координатор дня", 25000, "Родители", "Оценка: 15 000–40 000 ₽");
     addE("Полиграфия", "Сайт-приглашение", 0, "Юля и Сева", "Укажите сумму, если будут траты");
   } },
+  { id: "nov15-update", text: "ведущий + DJ Николай Кукушкин (85 000 ₽, аванс 10 000 ₽), аппаратура 45 000–65 000 ₽, пригласительные 3 500 ₽, кольца ~32 000 ₽", fn: d => {
+    const now = new Date().toISOString();
+    let host = d.expenses.find(x => x.cat === "Ведущий");
+    if (!host) { host = { id: newId("e"), cat: "Ведущий", payer: "Родители" }; d.expenses.push(host); }
+    Object.assign(host, { title: "Ведущий + DJ, 5 часов", planned: 85000, paid: Math.max(Number(host.paid) || 0, 10000), status: "Забронировано", vendor: "Николай Кукушкин", note: "Аванс 10 000 ₽ внесён, остаток 75 000 ₽" });
+    d.expenses = d.expenses.filter(x => x.title !== "DJ на вечер");
+    if (!d.expenses.some(x => x.cat === "Аппаратура")) d.expenses.push({ id: newId("e"), cat: "Аппаратура", title: "Звуковая аппаратура", planned: 65000, paid: 0, status: "Выбираем", vendor: "", payer: "Родители", note: "Вариант 1: смета 65 000 ₽ — попросить дешевле. Вариант 2: у друзей 45 000 ₽ — под вопросом" });
+    if (!d.expenses.some(x => x.title === "Пригласительные")) d.expenses.push({ id: newId("e"), cat: "Полиграфия", title: "Пригласительные", planned: 3500, paid: 3500, status: "Оплачено", vendor: "", payer: "Юля и Сева", note: "" });
+    const rings = d.expenses.find(x => x.cat === "Кольца");
+    if (rings) { rings.planned = 32000; rings.note = "Одно кольцо ~15 000–17 000 ₽, два — 30 000–34 000 ₽"; }
+    (d.tasks || []).forEach(x => {
+      if (/^Выбрать ведущего$|Забронировать ведущего и DJ|нужен ли DJ/i.test(x.text) && !x.done) { x.done = true; x.doneBy = "Юля"; x.doneAt = now; x.note = x.note || "Николай Кукушкин, ведущий + DJ на 5 часов"; }
+    });
+    d.tasks = d.tasks || [];
+    if (!d.tasks.some(x => /аппаратур/i.test(x.text) && x.section === "Выбрать подрядчиков")) {
+      const i = d.tasks.findIndex(x => x.section === "Выбрать подрядчиков");
+      const t = { id: newId("t"), section: "Выбрать подрядчиков", text: "Выбрать аппаратуру: смета 65 000 ₽ (попросить дешевле) или у друзей 45 000 ₽", note: "", done: false, doneBy: "", doneAt: "" };
+      if (i >= 0) d.tasks.splice(i, 0, t); else d.tasks.unshift(t);
+    }
+  } },
   { id: "extras-1", text: "добавлены оценки трат: фуршет, десерты, видеограф, ведущий, музыканты", fn: d => {
     EXTRAS.forEach(x => { if (!d.expenses.some(e => e.title === x.title)) d.expenses.push({ id: newId("e"), cat: x.cat, title: x.title, planned: x.planned, paid: 0, status: "Выбираем", vendor: "", note: x.note }); });
   } }
@@ -1097,7 +1164,47 @@ function renderMoney() {
         <span class="r">${inV ? `<s class="num muted">${rub(x.planned)}</s><span class="tag">в стоимости площадки</span>` : `<b class="num">${rub(x.planned)}</b>${ePill(x.status)}`}</span>
         <span class="d">Платят: ${esc(payerLabel(payerOf(x)))}. ${x.paid ? `Оплачено ${rub(x.paid)}. ` : ""}${x.vendor ? esc(x.vendor) + ". " : ""}${esc(x.note)}</span>
       </button>`).join(""); }).join("") || `<div class="empty">Трат пока нет</div>`}
+  </div>` + renderAlcohol(d);
+}
+function renderAlcohol(d) {
+  const c = alcoCalc(d);
+  const total = c.rows.reduce((a, r) => a + r.bottles, 0);
+  const guests = d.guests.filter(x => x.status !== "Не придёт");
+  const opt = (sel, list) => list.map(o => `<option ${o === sel ? "selected" : ""}>${esc(o)}</option>`).join("");
+  const dnames = DRINKS.map(x => x.k);
+  return `
+  <div class="card">
+    <div class="row"><h2>Калькулятор алкоголя</h2><span class="spacer"></span><button class="btn ghost" data-act="alco-norms">Нормы и запас</button></div>
+    <p class="small muted" style="margin:0 0 10px">У каждого гостя выберите напиток — бутылки посчитаются сами. Считаем всех, кроме «Не придёт», вместе с «+1» и «+1?». Запас ${c.st.reserve}%.</p>
+    ${c.unset ? `<p class="small" style="margin:0 0 10px;color:var(--warn)">Напиток не выбран у ${c.unset} ${plural(c.unset, "человека", "человек", "человек")} — они пока не посчитаны.</p>` : ""}
+    <div class="alco">
+      <div class="alco-h"><span>Напиток</span><span>Людей</span><span>Бутылок</span></div>
+      ${c.rows.map(r => `<div class="alco-r${r.n ? "" : " zero"}"><span>${esc(r.k)}${r.bottle ? ` <span class="muted small">${(r.bottle / 1000).toString().replace(".", ",")} л</span>` : ""}</span><span class="num">${r.n}</span><b class="num">${r.bottles}</b></div>`).join("")}
+      <div class="alco-r tot"><span>Всего бутылок</span><span class="num">${c.rows.reduce((a, r) => a + r.n, 0)}${c.none ? ` <span class="muted small">+ ${c.none} не пьют</span>` : ""}</span><b class="num">${total}</b></div>
+    </div>
+    <details class="split" id="drinksBox" style="margin-top:14px" ${S.drinksOpen ? "open" : ""}>
+      <summary>Выбрать напитки гостям (${guests.length - guests.filter(x => x.drink).length} без напитка)</summary>
+      <div class="drinks">${guests.map(x => `
+        <div class="drow">
+          <label for="dr-${x.id}">${esc(x.name)}${gBase(x) > 1 ? ` <span class="muted small">${gBase(x)} чел.</span>` : ""}</label>
+          <select id="dr-${x.id}" data-drink-guest="${x.id}"><option value="">—</option>${opt(x.drink, dnames)}</select>
+          ${x.plusOne === "Да" || x.plusOne === "Может быть" ? `<label for="dp-${x.id}" class="muted small">+1${x.plusOne === "Может быть" ? "?" : ""}</label><select id="dp-${x.id}" data-drink-plus="${x.id}"><option value="">как у гостя</option>${opt(x.plusDrink, dnames)}</select>` : ""}
+        </div>`).join("")}</div>
+    </details>
   </div>`;
+}
+function editAlcoNorms() {
+  const st = alcoSettings(S.data);
+  const fields = [{ k: "reserve", label: "Запас, %", type: "number" }];
+  const val = { reserve: st.reserve };
+  DRINKS.filter(x => x.k !== "Не пьёт").forEach((x, i) => { fields.push({ k: "p" + i, label: `${x.k}: мл на человека`, type: "number", half: 1 }, { k: "b" + i, label: "объём бутылки, мл", type: "number", half: 1 }); val["p" + i] = st.norms[x.k].per; val["b" + i] = st.norms[x.k].bottle; });
+  openForm({
+    title: "Нормы и запас", fields, value: val,
+    onSave: v => mutate(`изменил(а) нормы алкоголя (запас ${v.reserve}%)`, d => {
+      d.alcohol = { reserve: v.reserve, norms: {} };
+      DRINKS.filter(x => x.k !== "Не пьёт").forEach((x, i) => d.alcohol.norms[x.k] = { per: v["p" + i], bottle: v["b" + i] });
+    })
+  });
 }
 
 /* ================= Чек-лист ================= */
@@ -1364,6 +1471,8 @@ const guestFields = () => [
   { k: "count", label: "Сколько человек в записи (например, «Люба и Вася» — 2)", type: "number" },
   { k: "from", label: "Из какого города (если иногородний)", half: 1 },
   { k: "stay", label: "Где остановится", half: 1 },
+  { k: "drink", label: "Что пьёт", type: "select", options: ["", ...DRINKS.map(x => x.k)], half: 1 },
+  { k: "plusDrink", label: "Что пьёт «+1» (пусто — как гость)", type: "select", options: ["", ...DRINKS.map(x => x.k)], half: 1 },
   { k: "note", label: "Заметка", type: "textarea" }
 ];
 function editGuest(id) {
@@ -1381,7 +1490,7 @@ function editGuest(id) {
     onDelete: id ? () => mutate(`удалил(а) гостя «${g.name}»`, d => { d.guests = d.guests.filter(x => x.id !== id); }) : null
   });
 }
-const LABELS = { from: "город", stay: "где остановится", count: "человек в записи", payer: "кто платит", covers: "входит в площадку", guestsCalc: "гостей в расчёте", servicePct: "сервисный сбор, %", equipment: "аппаратура", corkage: "пробковый сбор", otherFees: "прочие сборы", includes: "что входит", capacity: "вместимость", rain: "план на дождь", musicUntil: "музыка до", alcohol: "свой алкоголь", pros: "плюсы", cons: "минусы", name: "имя", side: "сторона", group: "группа", status: "статус", plusOne: "+1", note: "заметка", city: "город", priceType: "тип цены", amount: "цена", paid: "оплачено", contact: "контакт", chosen: "выбор", cat: "категория", title: "название", planned: "план", vendor: "подрядчик" };
+const LABELS = { drink: "напиток", plusDrink: "напиток +1", from: "город", stay: "где остановится", count: "человек в записи", payer: "кто платит", covers: "входит в площадку", guestsCalc: "гостей в расчёте", servicePct: "сервисный сбор, %", equipment: "аппаратура", corkage: "пробковый сбор", otherFees: "прочие сборы", includes: "что входит", capacity: "вместимость", rain: "план на дождь", musicUntil: "музыка до", alcohol: "свой алкоголь", pros: "плюсы", cons: "минусы", name: "имя", side: "сторона", group: "группа", status: "статус", plusOne: "+1", note: "заметка", city: "город", priceType: "тип цены", amount: "цена", paid: "оплачено", contact: "контакт", chosen: "выбор", cat: "категория", title: "название", planned: "план", vendor: "подрядчик" };
 function describeChange(k, a, b) {
   if (k === "note" || k === "pros" || k === "cons" || k === "includes") return LABELS[k];
   if (Array.isArray(b)) return `входит в площадку: ${b.length ? b.join(", ").toLowerCase() : "ничего"}`;
@@ -1546,6 +1655,7 @@ document.addEventListener("click", async ev => {
   else if (a === "add-section") editSection(null);
   else if (a === "add-note") editNote(null);
   else if (a === "add-plan") editPlan(null);
+  else if (a === "alco-norms") editAlcoNorms();
   else if (a === "settings") show("settings");
   else if (a === "refresh") load();
   else if (a === "check-update") checkUpdate(true).then(() => { if (S.tab === "settings") renderSettings(); });
@@ -1554,6 +1664,16 @@ document.addEventListener("click", async ev => {
   else if (a === "export") exportJson();
   else if (a === "disconnect") { forgetConnection(); S.cfg = null; S.mode = "demo"; load(); toast("GitHub отключён на этом устройстве"); }
   else if (a === "reset-demo") { LS.del("wedding.demo"); load(); toast("Демо-данные сброшены"); }
+});
+document.addEventListener("toggle", ev => { if (ev.target.id === "drinksBox") S.drinksOpen = ev.target.open; }, true);
+document.addEventListener("change", ev => {
+  const t = ev.target;
+  const gid = t.dataset && (t.dataset.drinkGuest || t.dataset.drinkPlus);
+  if (!gid) return;
+  const key = t.dataset.drinkGuest ? "drink" : "plusDrink";
+  const g = S.data.guests.find(x => x.id === gid); if (!g) return;
+  const v = t.value;
+  mutate(`${g.name}${key === "plusDrink" ? " (+1)" : ""}: напиток — ${v || (key === "plusDrink" ? "как у гостя" : "не выбран")}`, d => { const x = d.guests.find(y => y.id === gid); if (!x || (x[key] || "") === v) return false; x[key] = v; });
 });
 document.addEventListener("input", ev => {
   if (ev.target.id === "gq") { S.gFilter.q = ev.target.value; const pos = ev.target.selectionStart; renderGuests(); const el = $("#gq"); el.focus(); try { el.setSelectionRange(pos, pos); } catch {} }
