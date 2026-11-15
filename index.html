@@ -281,8 +281,10 @@ code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.
 <script>
 "use strict";
 /* ================= Версия приложения ================= */
-const APP_VERSION = "1.17.0";
+const APP_VERSION = "1.17.2";
 const APP_CHANGES = [
+  { v: "1.17.2", d: "15.11.2026", t: "Лимончелло — домашнее: считается в литрах, а не в бутылках. Любителям — 300 мл, плюс рюмка 50 мл каждому пьющему гостю попробовать." },
+  { v: "1.17.1", d: "15.11.2026", t: "В калькулятор алкоголя добавлено лимончелло." },
   { v: "1.17.0", d: "15.11.2026", t: "Калькулятор алкоголя: гостю можно выбрать несколько напитков — его норма делится между ними поровну." },
   { v: "1.16.0", d: "15.11.2026", t: "Калькулятор алкоголя: у каждого гостя и его «+1» можно выбрать напиток, приложение считает бутылки с запасом. Внесены ведущий + DJ (Николай Кукушкин), аппаратура, пригласительные, новая оценка колец." },
   { v: "1.15.1", d: "15.11.2026", t: "Во вкладке «Гости» показано, сколько людей по выбранному фильтру — над списком и под ним." },
@@ -343,11 +345,12 @@ const DRINKS = [
   { k: "Водка", per: 350, bottle: 500 },
   { k: "Коньяк / виски", per: 300, bottle: 500 },
   { k: "Кальвадос", per: 300, bottle: 700 },
+  { k: "Лимончелло", per: 300, bottle: 0, homemade: true },
   { k: "Сидр", per: 750, bottle: 750 },
   { k: "Не пьёт", per: 0, bottle: 0 }
 ];
 const NO_DRINK = "не выбрано";
-const DRINK_SHORT = { "Шампанское": "Шампанское", "Белое сухое вино": "Белое сух.", "Полусладкое вино": "Полусладкое", "Красное вино": "Красное", "Водка": "Водка", "Коньяк / виски": "Коньяк/виски", "Кальвадос": "Кальвадос", "Сидр": "Сидр", "Не пьёт": "Не пьёт" };
+const DRINK_SHORT = { "Шампанское": "Шампанское", "Белое сухое вино": "Белое сух.", "Полусладкое вино": "Полусладкое", "Красное вино": "Красное", "Водка": "Водка", "Коньяк / виски": "Коньяк/виски", "Кальвадос": "Кальвадос", "Лимончелло": "Лимончелло", "Сидр": "Сидр", "Не пьёт": "Не пьёт" };
 /* Напитки гостя (список); старое поле drink — один напиток */
 const drinksOf = x => Array.isArray(x.drinks) ? x.drinks : (x.drink ? [x.drink] : []);
 const plusDrinksOf = x => Array.isArray(x.plusDrinks) && x.plusDrinks.length ? x.plusDrinks : (x.plusDrink ? [x.plusDrink] : drinksOf(x));
@@ -355,7 +358,7 @@ function alcoSettings(d) {
   const a = d.alcohol || {};
   const norms = {};
   DRINKS.forEach(x => { const n = (a.norms || {})[x.k] || {}; norms[x.k] = { per: Number(n.per ?? x.per) || 0, bottle: Number(n.bottle ?? x.bottle) || 0 }; });
-  return { reserve: Number(a.reserve ?? 30), norms };
+  return { reserve: Number(a.reserve ?? 30), norms, limoTaste: Number(a.limoTaste ?? 50) };
 }
 function alcoCalc(d) {
   const st = alcoSettings(d);
@@ -366,11 +369,15 @@ function alcoCalc(d) {
     add(drinksOf(x), gBase(x));
     if (x.plusOne === "Да" || x.plusOne === "Может быть") add(plusDrinksOf(x), 1);
   });
+  const drinkers = DRINKS.filter(x => x.k !== "Не пьёт").reduce((a, x) => a + people[x.k], 0) + people[NO_DRINK];
   const rows = DRINKS.filter(x => x.k !== "Не пьёт").map(x => {
     const n = people[x.k], nm = st.norms[x.k];
-    const litres = n * nm.per / 1000;
-    const bottles = nm.bottle ? Math.ceil(n * nm.per * (1 + st.reserve / 100) / nm.bottle) : 0;
-    return { k: x.k, n, litres, bottles, bottle: nm.bottle };
+    // домашний напиток (объём бутылки 0): считаем литры; лимончелло — ещё рюмка каждому пьющему гостю
+    const extra = x.k === "Лимончелло" ? drinkers * st.limoTaste : 0;
+    const ml = (n * nm.per + extra) * (1 + st.reserve / 100);
+    const bottles = nm.bottle ? Math.ceil(ml / nm.bottle) : 0;
+    const litres = nm.bottle ? 0 : Math.ceil(ml / 500) / 2; // до 0,5 л вверх
+    return { k: x.k, n, litres, bottles, bottle: nm.bottle, home: !nm.bottle, extra: !!extra };
   });
   return { st, people, rows, unset: people[NO_DRINK], none: people["Не пьёт"] };
 }
@@ -1187,8 +1194,8 @@ function renderAlcohol(d) {
     ${c.unset ? `<p class="small" style="margin:0 0 10px;color:var(--warn)">Напиток не выбран у ${c.unset} ${plural(c.unset, "человека", "человек", "человек")} — они пока не посчитаны.</p>` : ""}
     <div class="alco">
       <div class="alco-h"><span>Напиток</span><span>Людей</span><span>Бутылок</span></div>
-      ${c.rows.map(r => `<div class="alco-r${r.n ? "" : " zero"}"><span>${esc(r.k)}${r.bottle ? ` <span class="muted small">${(r.bottle / 1000).toString().replace(".", ",")} л</span>` : ""}</span><span class="num">${fmtN(Math.round(r.n * 10) / 10)}</span><b class="num">${r.bottles}</b></div>`).join("")}
-      <div class="alco-r tot"><span>Всего бутылок</span><span class="num">${fmtN(Math.round(c.rows.reduce((a, r) => a + r.n, 0) * 10) / 10)}${c.none ? ` <span class="muted small">+ ${c.none} не пьют</span>` : ""}</span><b class="num">${total}</b></div>
+      ${c.rows.map(r => `<div class="alco-r${r.n || r.litres ? "" : " zero"}"><span>${esc(r.k)}${r.bottle ? ` <span class="muted small">${(r.bottle / 1000).toString().replace(".", ",")} л</span>` : ` <span class="muted small">домашнее${r.extra ? `, + рюмка каждому` : ""}</span>`}</span><span class="num">${fmtN(Math.round(r.n * 10) / 10)}</span><b class="num">${r.home ? `${fmtN(r.litres)} л` : r.bottles}</b></div>`).join("")}
+      <div class="alco-r tot"><span>Всего бутылок <span class="muted small">(без домашнего)</span></span><span class="num">${fmtN(Math.round(c.rows.reduce((a, r) => a + r.n, 0) * 10) / 10)}${c.none ? ` <span class="muted small">+ ${c.none} не пьют</span>` : ""}</span><b class="num">${total}</b></div>
     </div>
     <details class="split" id="drinksBox" style="margin-top:14px" ${S.drinksOpen ? "open" : ""}>
       <summary>Выбрать напитки гостям (${guests.filter(x => !drinksOf(x).length).length} без напитка)</summary>
@@ -1204,13 +1211,13 @@ function renderAlcohol(d) {
 }
 function editAlcoNorms() {
   const st = alcoSettings(S.data);
-  const fields = [{ k: "reserve", label: "Запас, %", type: "number" }];
-  const val = { reserve: st.reserve };
-  DRINKS.filter(x => x.k !== "Не пьёт").forEach((x, i) => { fields.push({ k: "p" + i, label: `${x.k}: мл на человека`, type: "number", half: 1 }, { k: "b" + i, label: "объём бутылки, мл", type: "number", half: 1 }); val["p" + i] = st.norms[x.k].per; val["b" + i] = st.norms[x.k].bottle; });
+  const fields = [{ k: "reserve", label: "Запас, %", type: "number", half: 1 }, { k: "limoTaste", label: "Лимончелло: рюмка каждому гостю, мл", type: "number", half: 1 }];
+  const val = { reserve: st.reserve, limoTaste: st.limoTaste };
+  DRINKS.filter(x => x.k !== "Не пьёт").forEach((x, i) => { fields.push({ k: "p" + i, label: `${x.k}: мл на человека`, type: "number", half: 1 }, { k: "b" + i, label: "бутылка, мл (0 — домашнее, в литрах)", type: "number", half: 1 }); val["p" + i] = st.norms[x.k].per; val["b" + i] = st.norms[x.k].bottle; });
   openForm({
     title: "Нормы и запас", fields, value: val,
     onSave: v => mutate(`изменил(а) нормы алкоголя (запас ${v.reserve}%)`, d => {
-      d.alcohol = { reserve: v.reserve, norms: {} };
+      d.alcohol = { reserve: v.reserve, limoTaste: v.limoTaste, norms: {} };
       DRINKS.filter(x => x.k !== "Не пьёт").forEach((x, i) => d.alcohol.norms[x.k] = { per: v["p" + i], bottle: v["b" + i] });
     })
   });
