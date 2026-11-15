@@ -128,6 +128,9 @@ textarea{min-height:70px;resize:vertical}
 .split{margin:0 0 12px;font-size:14.5px}
 .split summary{cursor:pointer;color:var(--muted);font-size:14px}
 .split .row{padding:3px 0}
+.ftotal{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;justify-content:space-between;margin-top:12px;padding:10px 12px;background:var(--olive-soft);border-radius:10px;font-size:15px}
+.ftotal.bottom{margin-top:14px}
+.ftotal .muted{font-size:13.5px}
 .payers{display:flex;flex-direction:column;gap:6px;margin-top:12px;padding:10px 12px;background:var(--olive-soft);border-radius:10px}
 .task{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;padding:10px 2px;border-bottom:1px solid var(--line)}
 .tick{width:28px;height:28px;border-radius:8px;border:1.5px solid var(--olive);background:transparent;color:var(--card);font-size:16px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px}
@@ -265,8 +268,9 @@ code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.
 <script>
 "use strict";
 /* ================= Версия приложения ================= */
-const APP_VERSION = "1.15.0";
+const APP_VERSION = "1.15.1";
 const APP_CHANGES = [
+  { v: "1.15.1", d: "15.11.2026", t: "Во вкладке «Гости» показано, сколько людей по выбранному фильтру — над списком и под ним." },
   { v: "1.15.0", d: "29.10.2026", t: "Иногородние гости: город и где остановятся, фильтр «Из других городов». Внесено: зал «Архангельский» выбран, аванс 100 000 ₽ оплачен; гости с работы; раздел чек-листа «Выбрать подрядчиков»; траты на рилсмейкера, координатора и сайт-приглашение." },
   { v: "1.14.1", d: "25.10.2026", t: "Исправлен обратный отсчёт: считаются календарные дни до 27 августа, без округления неполного дня вверх. Число обновляется при открытии приложения и после полуночи." },
   { v: "1.14.0", d: "24.10.2026", t: "Гости считаются по людям, а не по строчкам: «+1» добавляет человека, «+1?» идёт в «возможно». У записи можно указать, сколько в ней человек (например, «Люба и Вася» — 2). В заголовках групп — число людей." },
@@ -970,6 +974,7 @@ function renderGuests() {
     <div class="chips" style="margin-top:10px">${chip("side", "all", "Все")}${SIDES.map(s => chip("side", s, s === "Сева" ? "Сторона Севы" : "Сторона Юли")).join("")}</div>
     <div class="chips" style="margin-top:6px">${chip("status", "all", "Любой статус")}${G_STATUS.map(s => chip("status", s, s)).join("")}</div>
     <div class="chips" style="margin-top:6px">${chip("town", "all", "Все города")}${chip("town", "out", "Из других городов")}</div>
+    ${filterTotal(list, d)}
     <div class="list" style="margin-top:6px">
       ${groups.map(gr => { const items = list.filter(x => x.group === gr); if (!items.length) return ""; const gp = groupPeople(items); return `<div class="group-h"><span>${esc(gr)}</span><span class="num small muted">${gp.sure} чел.${gp.maybe ? ` + ${gp.maybe} под вопросом` : ""}</span></div>` + items.map(x => `
         <button class="item" data-edit-guest="${x.id}">
@@ -978,6 +983,17 @@ function renderGuests() {
           <span class="d">${x.from ? `<span class="tag">из: ${esc(x.from)}</span> ${x.stay ? `живут: ${esc(x.stay)}` : `<span style="color:var(--warn)">где остановятся — уточнить</span>`}${x.note ? " · " : ""}` : ""}${esc(x.note)}</span>
         </button>`).join(""); }).join("") || `<div class="empty">Никого не нашли. Измените фильтр или добавьте гостя.</div>`}
     </div>
+    ${list.length ? filterTotal(list, d, true) : ""}
+  </div>`;
+}
+/* Итог по выбранному фильтру: люди, а не строчки */
+function filterTotal(list, d, bottom) {
+  const all = list.length === d.guests.length;
+  const p = groupPeople(list);
+  const declined = sumBy(list.filter(x => x.status === "Не придёт"), gBase);
+  return `<div class="ftotal${bottom ? " bottom" : ""}">
+    <span>${all ? "Всего" : "По фильтру"}: <b class="num">${p.sure + p.maybe}</b> ${plural(p.sure + p.maybe, "человек", "человека", "человек")}</span>
+    <span class="muted">точно ${p.sure}${p.maybe ? `, под вопросом ${p.maybe}` : ""}${declined ? `, не придут ${declined}` : ""} · ${list.length} ${plural(list.length, "запись", "записи", "записей")}</span>
   </div>`;
 }
 
