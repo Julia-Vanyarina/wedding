@@ -138,10 +138,12 @@ textarea{min-height:70px;resize:vertical}
 .alco-r.zero{color:var(--muted)}
 .alco-r.tot{border-bottom:0;font-weight:600}
 .drinks{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-.drow{display:grid;grid-template-columns:1fr 150px;gap:6px 10px;align-items:center}
-.drow label{min-width:0;overflow-wrap:anywhere;font-size:15px}
-.drow select{min-height:36px;padding:4px 8px;font-size:14.5px}
-@media (max-width:420px){.drow{grid-template-columns:1fr 130px}}
+.drow{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-bottom:1px solid var(--line)}
+.dname{font-size:15px;overflow-wrap:anywhere}
+.dchips{display:flex;flex-wrap:wrap;gap:5px}
+.dchip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:4px 10px;font-size:13px;cursor:pointer;min-height:30px}
+.dchip[aria-pressed="true"]{background:var(--olive);border-color:var(--olive);color:var(--card)}
+.dchip:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
 .payers{display:flex;flex-direction:column;gap:6px;margin-top:12px;padding:10px 12px;background:var(--olive-soft);border-radius:10px}
 .task{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;padding:10px 2px;border-bottom:1px solid var(--line)}
 .tick{width:28px;height:28px;border-radius:8px;border:1.5px solid var(--olive);background:transparent;color:var(--card);font-size:16px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px}
@@ -279,8 +281,9 @@ code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.
 <script>
 "use strict";
 /* ================= Версия приложения ================= */
-const APP_VERSION = "1.16.0";
+const APP_VERSION = "1.17.0";
 const APP_CHANGES = [
+  { v: "1.17.0", d: "15.11.2026", t: "Калькулятор алкоголя: гостю можно выбрать несколько напитков — его норма делится между ними поровну." },
   { v: "1.16.0", d: "15.11.2026", t: "Калькулятор алкоголя: у каждого гостя и его «+1» можно выбрать напиток, приложение считает бутылки с запасом. Внесены ведущий + DJ (Николай Кукушкин), аппаратура, пригласительные, новая оценка колец." },
   { v: "1.15.1", d: "15.11.2026", t: "Во вкладке «Гости» показано, сколько людей по выбранному фильтру — над списком и под ним." },
   { v: "1.15.0", d: "29.10.2026", t: "Иногородние гости: город и где остановятся, фильтр «Из других городов». Внесено: зал «Архангельский» выбран, аванс 100 000 ₽ оплачен; гости с работы; раздел чек-листа «Выбрать подрядчиков»; траты на рилсмейкера, координатора и сайт-приглашение." },
@@ -344,6 +347,10 @@ const DRINKS = [
   { k: "Не пьёт", per: 0, bottle: 0 }
 ];
 const NO_DRINK = "не выбрано";
+const DRINK_SHORT = { "Шампанское": "Шампанское", "Белое сухое вино": "Белое сух.", "Полусладкое вино": "Полусладкое", "Красное вино": "Красное", "Водка": "Водка", "Коньяк / виски": "Коньяк/виски", "Кальвадос": "Кальвадос", "Сидр": "Сидр", "Не пьёт": "Не пьёт" };
+/* Напитки гостя (список); старое поле drink — один напиток */
+const drinksOf = x => Array.isArray(x.drinks) ? x.drinks : (x.drink ? [x.drink] : []);
+const plusDrinksOf = x => Array.isArray(x.plusDrinks) && x.plusDrinks.length ? x.plusDrinks : (x.plusDrink ? [x.plusDrink] : drinksOf(x));
 function alcoSettings(d) {
   const a = d.alcohol || {};
   const norms = {};
@@ -353,10 +360,11 @@ function alcoSettings(d) {
 function alcoCalc(d) {
   const st = alcoSettings(d);
   const people = {}; DRINKS.forEach(x => people[x.k] = 0); people[NO_DRINK] = 0;
-  const add = (k, n) => { const key = DRINKS.some(x => x.k === k) ? k : NO_DRINK; people[key] += n; };
+  // человек с несколькими напитками делит свою норму поровну между ними
+  const add = (list, n) => { const ok = list.filter(k => DRINKS.some(x => x.k === k)); if (!ok.length) { people[NO_DRINK] += n; return; } ok.forEach(k => people[k] += n / ok.length); };
   d.guests.filter(x => x.status !== "Не придёт").forEach(x => {
-    add(x.drink, gBase(x));
-    if (x.plusOne === "Да" || x.plusOne === "Может быть") add(x.plusDrink || x.drink, 1);
+    add(drinksOf(x), gBase(x));
+    if (x.plusOne === "Да" || x.plusOne === "Может быть") add(plusDrinksOf(x), 1);
   });
   const rows = DRINKS.filter(x => x.k !== "Не пьёт").map(x => {
     const n = people[x.k], nm = st.norms[x.k];
@@ -1175,21 +1183,22 @@ function renderAlcohol(d) {
   return `
   <div class="card">
     <div class="row"><h2>Калькулятор алкоголя</h2><span class="spacer"></span><button class="btn ghost" data-act="alco-norms">Нормы и запас</button></div>
-    <p class="small muted" style="margin:0 0 10px">У каждого гостя выберите напиток — бутылки посчитаются сами. Считаем всех, кроме «Не придёт», вместе с «+1» и «+1?». Запас ${c.st.reserve}%.</p>
+    <p class="small muted" style="margin:0 0 10px">У каждого гостя отметьте один или несколько напитков — бутылки посчитаются сами. Если напитков несколько, норма гостя делится между ними поровну. Считаем всех, кроме «Не придёт», вместе с «+1» и «+1?». Запас ${c.st.reserve}%.</p>
     ${c.unset ? `<p class="small" style="margin:0 0 10px;color:var(--warn)">Напиток не выбран у ${c.unset} ${plural(c.unset, "человека", "человек", "человек")} — они пока не посчитаны.</p>` : ""}
     <div class="alco">
       <div class="alco-h"><span>Напиток</span><span>Людей</span><span>Бутылок</span></div>
-      ${c.rows.map(r => `<div class="alco-r${r.n ? "" : " zero"}"><span>${esc(r.k)}${r.bottle ? ` <span class="muted small">${(r.bottle / 1000).toString().replace(".", ",")} л</span>` : ""}</span><span class="num">${r.n}</span><b class="num">${r.bottles}</b></div>`).join("")}
-      <div class="alco-r tot"><span>Всего бутылок</span><span class="num">${c.rows.reduce((a, r) => a + r.n, 0)}${c.none ? ` <span class="muted small">+ ${c.none} не пьют</span>` : ""}</span><b class="num">${total}</b></div>
+      ${c.rows.map(r => `<div class="alco-r${r.n ? "" : " zero"}"><span>${esc(r.k)}${r.bottle ? ` <span class="muted small">${(r.bottle / 1000).toString().replace(".", ",")} л</span>` : ""}</span><span class="num">${fmtN(Math.round(r.n * 10) / 10)}</span><b class="num">${r.bottles}</b></div>`).join("")}
+      <div class="alco-r tot"><span>Всего бутылок</span><span class="num">${fmtN(Math.round(c.rows.reduce((a, r) => a + r.n, 0) * 10) / 10)}${c.none ? ` <span class="muted small">+ ${c.none} не пьют</span>` : ""}</span><b class="num">${total}</b></div>
     </div>
     <details class="split" id="drinksBox" style="margin-top:14px" ${S.drinksOpen ? "open" : ""}>
-      <summary>Выбрать напитки гостям (${guests.length - guests.filter(x => x.drink).length} без напитка)</summary>
-      <div class="drinks">${guests.map(x => `
+      <summary>Выбрать напитки гостям (${guests.filter(x => !drinksOf(x).length).length} без напитка)</summary>
+      <div class="drinks">${guests.map(x => { const mine = drinksOf(x), own = Array.isArray(x.plusDrinks) && x.plusDrinks.length ? x.plusDrinks : (x.plusDrink ? [x.plusDrink] : []); const hasPlus = x.plusOne === "Да" || x.plusOne === "Может быть"; return `
         <div class="drow">
-          <label for="dr-${x.id}">${esc(x.name)}${gBase(x) > 1 ? ` <span class="muted small">${gBase(x)} чел.</span>` : ""}</label>
-          <select id="dr-${x.id}" data-drink-guest="${x.id}"><option value="">—</option>${opt(x.drink, dnames)}</select>
-          ${x.plusOne === "Да" || x.plusOne === "Может быть" ? `<label for="dp-${x.id}" class="muted small">+1${x.plusOne === "Может быть" ? "?" : ""}</label><select id="dp-${x.id}" data-drink-plus="${x.id}"><option value="">как у гостя</option>${opt(x.plusDrink, dnames)}</select>` : ""}
-        </div>`).join("")}</div>
+          <div class="dname">${esc(x.name)}${gBase(x) > 1 ? ` <span class="muted small">${gBase(x)} чел.</span>` : ""}</div>
+          <div class="dchips">${dnames.map(k => `<button class="dchip" data-dk="${x.id}" data-dkey="drinks" data-dv="${esc(k)}" aria-pressed="${mine.includes(k)}">${esc(DRINK_SHORT[k])}</button>`).join("")}</div>
+          ${hasPlus ? `<div class="dname muted small">+1${x.plusOne === "Может быть" ? "?" : ""}: ${own.length ? "" : "как у гостя"}</div>
+          <div class="dchips">${dnames.map(k => `<button class="dchip" data-dk="${x.id}" data-dkey="plusDrinks" data-dv="${esc(k)}" aria-pressed="${own.includes(k)}">${esc(DRINK_SHORT[k])}</button>`).join("")}</div>` : ""}
+        </div>`; }).join("")}</div>
     </details>
   </div>`;
 }
@@ -1471,8 +1480,7 @@ const guestFields = () => [
   { k: "count", label: "Сколько человек в записи (например, «Люба и Вася» — 2)", type: "number" },
   { k: "from", label: "Из какого города (если иногородний)", half: 1 },
   { k: "stay", label: "Где остановится", half: 1 },
-  { k: "drink", label: "Что пьёт", type: "select", options: ["", ...DRINKS.map(x => x.k)], half: 1 },
-  { k: "plusDrink", label: "Что пьёт «+1» (пусто — как гость)", type: "select", options: ["", ...DRINKS.map(x => x.k)], half: 1 },
+
   { k: "note", label: "Заметка", type: "textarea" }
 ];
 function editGuest(id) {
@@ -1611,13 +1619,25 @@ function renderAll() {
   renderSync(); renderBanner(); renderHome(); renderGuests(); renderVenues(); renderMoney(); renderChecklist(); renderLog(); renderSettings(); renderFooter();
 }
 document.addEventListener("click", async ev => {
-  const t = ev.target.closest("[data-tab],[data-act],[data-edit-guest],[data-edit-venue],[data-edit-expense],[data-gf],[data-cmp],[data-choose-venue],[data-tick],[data-edit-task],[data-tf],[data-pf],[data-add-in],[data-edit-sec],[data-edit-note],[data-edit-plan]");
+  const t = ev.target.closest("[data-tab],[data-act],[data-edit-guest],[data-edit-venue],[data-edit-expense],[data-gf],[data-cmp],[data-choose-venue],[data-tick],[data-edit-task],[data-tf],[data-pf],[data-dk],[data-add-in],[data-edit-sec],[data-edit-note],[data-edit-plan]");
   if (!t) return;
   if (t.dataset.tab) return show(t.dataset.tab);
   if (t.dataset.editGuest) return editGuest(t.dataset.editGuest);
   if (t.dataset.editVenue) return editVenue(t.dataset.editVenue);
   if (t.dataset.editExpense) return editExpense(t.dataset.editExpense);
   if (t.dataset.gf) { S.gFilter[t.dataset.gf] = t.dataset.v; renderGuests(); return; }
+  if (t.dataset.dk) {
+    const gid = t.dataset.dk, key = t.dataset.dkey, k = t.dataset.dv;
+    const g0 = S.data.guests.find(x => x.id === gid); if (!g0) return;
+    const cur = key === "drinks" ? drinksOf(g0) : (Array.isArray(g0.plusDrinks) && g0.plusDrinks.length ? g0.plusDrinks : (g0.plusDrink ? [g0.plusDrink] : []));
+    let next = cur.includes(k) ? cur.filter(x => x !== k) : (k === "Не пьёт" ? ["Не пьёт"] : cur.filter(x => x !== "Не пьёт").concat(k));
+    next = DRINKS.map(x => x.k).filter(x => next.includes(x));
+    const label = next.length ? next.join(", ").toLowerCase() : (key === "plusDrinks" ? "как у гостя" : "не выбраны");
+    // сразу показываем выбор, потом сохраняем
+    g0[key] = next; if (key === "drinks") delete g0.drink; else delete g0.plusDrink; renderMoney();
+    mutate(`${g0.name}${key === "plusDrinks" ? " (+1)" : ""}: напитки — ${label}`, d => { const x = d.guests.find(y => y.id === gid); if (!x) return false; x[key] = next; if (key === "drinks") delete x.drink; else delete x.plusDrink; }, { quiet: true });
+    return;
+  }
   if (t.dataset.pf) { S.payFilter = t.dataset.pf; renderMoney(); return; }
   if (t.dataset.tf) { S.taskFilter = t.dataset.tf; renderChecklist(); return; }
   if (t.dataset.editTask) return editTask(t.dataset.editTask);
