@@ -137,6 +137,11 @@ textarea{min-height:70px;resize:vertical}
 .alco-h span:not(:first-child),.alco-r > :not(:first-child){text-align:right}
 .alco-r.zero{color:var(--muted)}
 .alco-r.tot{border-bottom:0;font-weight:600}
+.buy{display:flex;flex-direction:column;gap:2px;padding:0 2px 8px;border-bottom:1px solid var(--line)}
+.buy.tot{border-bottom:0;padding-top:2px}
+.buy-m{height:8px;margin:2px 0 0;background:var(--olive-soft)}
+.buy-m i{background:var(--sky)}
+.buy-m.done i{background:var(--olive)}
 .drinks{display:flex;flex-direction:column;gap:8px;margin-top:10px}
 .drow{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-bottom:1px solid var(--line)}
 .dname{font-size:15px;overflow-wrap:anywhere}
@@ -281,8 +286,9 @@ code{background:rgba(58,43,34,.07);padding:1px 5px;border-radius:5px;font-size:.
 <script>
 "use strict";
 /* ================= Версия приложения ================= */
-const APP_VERSION = "1.17.2";
+const APP_VERSION = "1.18.0";
 const APP_CHANGES = [
+  { v: "1.18.0", d: "20.11.2026", t: "Калькулятор алкоголя: сколько уже куплено — полоса накопления по каждому напитку и общий итог, кнопка «Отметить покупку». Внесено шампанское Голицын брют: 18 бутылок, 7 560 ₽, родители пополам." },
   { v: "1.17.2", d: "15.11.2026", t: "Лимончелло — домашнее: считается в литрах, а не в бутылках. Любителям — 300 мл, плюс рюмка 50 мл каждому пьющему гостю попробовать." },
   { v: "1.17.1", d: "15.11.2026", t: "В калькулятор алкоголя добавлено лимончелло." },
   { v: "1.17.0", d: "15.11.2026", t: "Калькулятор алкоголя: гостю можно выбрать несколько напитков — его норма делится между ними поровну." },
@@ -358,7 +364,7 @@ function alcoSettings(d) {
   const a = d.alcohol || {};
   const norms = {};
   DRINKS.forEach(x => { const n = (a.norms || {})[x.k] || {}; norms[x.k] = { per: Number(n.per ?? x.per) || 0, bottle: Number(n.bottle ?? x.bottle) || 0 }; });
-  return { reserve: Number(a.reserve ?? 30), norms, limoTaste: Number(a.limoTaste ?? 50) };
+  return { reserve: Number(a.reserve ?? 30), norms, limoTaste: Number(a.limoTaste ?? 50), bought: a.bought || {} };
 }
 function alcoCalc(d) {
   const st = alcoSettings(d);
@@ -377,7 +383,8 @@ function alcoCalc(d) {
     const ml = (n * nm.per + extra) * (1 + st.reserve / 100);
     const bottles = nm.bottle ? Math.ceil(ml / nm.bottle) : 0;
     const litres = nm.bottle ? 0 : Math.ceil(ml / 500) / 2; // до 0,5 л вверх
-    return { k: x.k, n, litres, bottles, bottle: nm.bottle, home: !nm.bottle, extra: !!extra };
+    const need = nm.bottle ? bottles : litres;
+    return { k: x.k, n, litres, bottles, bottle: nm.bottle, home: !nm.bottle, extra: !!extra, need, bought: Number(st.bought[x.k]) || 0 };
   });
   return { st, people, rows, unset: people[NO_DRINK], none: people["Не пьёт"] };
 }
@@ -860,6 +867,13 @@ const MIGRATIONS = [
       if (i >= 0) d.tasks.splice(i, 0, t); else d.tasks.unshift(t);
     }
   } },
+  { id: "nov20-champagne", text: "куплено шампанское Голицын брют: 18 бутылок, 7 560 ₽ — оплачивают родители пополам", fn: d => {
+    if (!d.expenses.some(x => /Голицын/i.test(x.title || ""))) d.expenses.push({ id: newId("e"), cat: "Алкоголь", title: "Шампанское Голицын брют, 18 бутылок", planned: 7560, paid: 7560, status: "Оплачено", vendor: "", note: "По 3 780 ₽ с каждой стороны", payer: "Родители" });
+    d.alcohol = d.alcohol || {}; d.alcohol.bought = d.alcohol.bought || {};
+    if (!(Number(d.alcohol.bought["Шампанское"]) >= 18)) d.alcohol.bought["Шампанское"] = 18;
+    const host = d.expenses.find(x => x.cat === "Ведущий");
+    if (host && host.payer !== "Родители") host.payer = "Родители";
+  } },
   { id: "extras-1", text: "добавлены оценки трат: фуршет, десерты, видеограф, ведущий, музыканты", fn: d => {
     EXTRAS.forEach(x => { if (!d.expenses.some(e => e.title === x.title)) d.expenses.push({ id: newId("e"), cat: x.cat, title: x.title, planned: x.planned, paid: 0, status: "Выбираем", vendor: "", note: x.note }); });
   } }
@@ -1194,9 +1208,11 @@ function renderAlcohol(d) {
     ${c.unset ? `<p class="small" style="margin:0 0 10px;color:var(--warn)">Напиток не выбран у ${c.unset} ${plural(c.unset, "человека", "человек", "человек")} — они пока не посчитаны.</p>` : ""}
     <div class="alco">
       <div class="alco-h"><span>Напиток</span><span>Людей</span><span>Бутылок</span></div>
-      ${c.rows.map(r => `<div class="alco-r${r.n || r.litres ? "" : " zero"}"><span>${esc(r.k)}${r.bottle ? ` <span class="muted small">${(r.bottle / 1000).toString().replace(".", ",")} л</span>` : ` <span class="muted small">домашнее${r.extra ? `, + рюмка каждому` : ""}</span>`}</span><span class="num">${fmtN(Math.round(r.n * 10) / 10)}</span><b class="num">${r.home ? `${fmtN(r.litres)} л` : r.bottles}</b></div>`).join("")}
+      ${c.rows.map(r => `<div class="alco-r${r.n || r.litres ? "" : " zero"}"><span>${esc(r.k)}${r.bottle ? ` <span class="muted small">${(r.bottle / 1000).toString().replace(".", ",")} л</span>` : ` <span class="muted small">домашнее${r.extra ? `, + рюмка каждому` : ""}</span>`}</span><span class="num">${fmtN(Math.round(r.n * 10) / 10)}</span><b class="num">${r.home ? `${fmtN(r.litres)} л` : r.bottles}</b></div>${buyBar(r)}`).join("")}
       <div class="alco-r tot"><span>Всего бутылок <span class="muted small">(без домашнего)</span></span><span class="num">${fmtN(Math.round(c.rows.reduce((a, r) => a + r.n, 0) * 10) / 10)}${c.none ? ` <span class="muted small">+ ${c.none} не пьют</span>` : ""}</span><b class="num">${total}</b></div>
+      ${(() => { const got = c.rows.filter(r => !r.home).reduce((a, r) => a + Math.min(r.bought, r.bottles), 0), over = c.rows.filter(r => !r.home).reduce((a, r) => a + r.bought, 0); return total || over ? `<div class="buy tot"><div class="meter buy-m${got >= total && total ? " done" : ""}" role="img" aria-label="Куплено ${over} из ${total} бутылок"><i style="width:${total ? Math.min(100, got / total * 100) : 100}%"></i></div><span class="small num">Куплено <b>${over}</b> из ${total} бутылок${got >= total && total ? " — всё куплено" : ""}</span></div>` : ""; })()}
     </div>
+    <div class="actions" style="margin-top:10px"><button class="btn" data-act="alco-bought">Отметить покупку</button></div>
     <details class="split" id="drinksBox" style="margin-top:14px" ${S.drinksOpen ? "open" : ""}>
       <summary>Выбрать напитки гостям (${guests.filter(x => !drinksOf(x).length).length} без напитка)</summary>
       <div class="drinks">${guests.map(x => { const mine = drinksOf(x), own = Array.isArray(x.plusDrinks) && x.plusDrinks.length ? x.plusDrinks : (x.plusDrink ? [x.plusDrink] : []); const hasPlus = x.plusOne === "Да" || x.plusOne === "Может быть"; return `
@@ -1209,6 +1225,29 @@ function renderAlcohol(d) {
     </details>
   </div>`;
 }
+/* Полоса накопления: сколько уже куплено из нужного */
+function buyBar(r) {
+  if (!r.need && !r.bought) return "";
+  const unit = r.home ? "л" : "бут.";
+  const done = r.need && r.bought >= r.need;
+  const pct = r.need ? Math.min(100, r.bought / r.need * 100) : 100;
+  return `<div class="buy"><div class="meter buy-m${done ? " done" : ""}" role="img" aria-label="${esc(r.k)}: ${r.home ? "готово" : "куплено"} ${r.bought} из ${fmtN(r.need)} ${unit}"><i style="width:${pct}%"></i></div>
+    <span class="small num ${done ? "" : "muted"}">${r.home ? "готово" : "куплено"} ${fmtN(r.bought)} из ${fmtN(r.need)} ${unit}${done ? (r.bought > r.need ? ` · на ${fmtN(r.bought - r.need)} больше` : " ✓") : ` · ещё ${fmtN(Math.round((r.need - r.bought) * 10) / 10)}`}</span></div>`;
+}
+function editAlcoBought() {
+  const st = alcoSettings(S.data);
+  const list = DRINKS.filter(x => x.k !== "Не пьёт");
+  const fields = list.map((x, i) => ({ k: "q" + i, label: st.norms[x.k].bottle ? `${x.k}, куплено бутылок` : `${x.k}, готово литров`, type: "number", half: 1 }));
+  const val = Object.fromEntries(list.map((x, i) => ["q" + i, Number(st.bought[x.k]) || 0]));
+  openForm({
+    title: "Сколько уже куплено", fields, value: val,
+    onSave: v => {
+      const ch = list.map((x, i) => ({ k: x.k, a: Number(st.bought[x.k]) || 0, b: v["q" + i] })).filter(o => o.a !== o.b);
+      if (!ch.length) return true;
+      return mutate(`отметил(а) покупку алкоголя: ${ch.map(o => `${o.k.toLowerCase()} ${o.a} → ${o.b}`).join(", ")}`, d => { d.alcohol = d.alcohol || {}; d.alcohol.bought = d.alcohol.bought || {}; ch.forEach(o => d.alcohol.bought[o.k] = o.b); });
+    }
+  });
+}
 function editAlcoNorms() {
   const st = alcoSettings(S.data);
   const fields = [{ k: "reserve", label: "Запас, %", type: "number", half: 1 }, { k: "limoTaste", label: "Лимончелло: рюмка каждому гостю, мл", type: "number", half: 1 }];
@@ -1217,7 +1256,7 @@ function editAlcoNorms() {
   openForm({
     title: "Нормы и запас", fields, value: val,
     onSave: v => mutate(`изменил(а) нормы алкоголя (запас ${v.reserve}%)`, d => {
-      d.alcohol = { reserve: v.reserve, limoTaste: v.limoTaste, norms: {} };
+      d.alcohol = { ...(d.alcohol || {}), reserve: v.reserve, limoTaste: v.limoTaste, norms: {} };
       DRINKS.filter(x => x.k !== "Не пьёт").forEach((x, i) => d.alcohol.norms[x.k] = { per: v["p" + i], bottle: v["b" + i] });
     })
   });
@@ -1683,6 +1722,7 @@ document.addEventListener("click", async ev => {
   else if (a === "add-note") editNote(null);
   else if (a === "add-plan") editPlan(null);
   else if (a === "alco-norms") editAlcoNorms();
+  else if (a === "alco-bought") editAlcoBought();
   else if (a === "settings") show("settings");
   else if (a === "refresh") load();
   else if (a === "check-update") checkUpdate(true).then(() => { if (S.tab === "settings") renderSettings(); });
